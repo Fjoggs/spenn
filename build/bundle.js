@@ -153,8 +153,6 @@ var ChangeEvent;
 var calculateProjectHours = (table, inputElement, totalProjectHours, oldValue) => {
   const inputValue = Number(inputElement.value);
   let combinedHours = document.getElementById("hours-combined");
-  console.log("total", totalProjectHours);
-  console.log("com", combinedHours);
   let newProjectHours = "";
   let newCombinedHours = "";
   if (inputValue === 0) {
@@ -164,12 +162,11 @@ var calculateProjectHours = (table, inputElement, totalProjectHours, oldValue) =
     newProjectHours = (totalProjectHours + inputValue).toString();
     newCombinedHours = (Number(combinedHours?.textContent) + inputValue).toString();
   }
-  console.log("newCombinedHours", newCombinedHours);
   let projectHours = document.getElementById("hours-project");
   if (combinedHours && projectHours) {
     combinedHours.textContent = newCombinedHours;
     projectHours.textContent = newProjectHours;
-    table.setAttribute(`data-project-${getActiveProjectName()}-total-hours`, newCombinedHours);
+    table.setAttribute(`data-project-${getActiveProjectName()}-total-hours`, newProjectHours);
   }
 };
 var onChangeObserver = (records, observer) => {
