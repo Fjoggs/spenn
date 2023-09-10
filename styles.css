@@ -1,0 +1,155 @@
+:root {
+    --main-color: rgb(30, 41, 59);
+    --secondary-color: rgb(71 85 105);
+    --tertiary-color: rgb(33, 45, 65);
+    --button-main-color: rgb(71 85 105);
+    --button-secondary-color: rgb(88, 106, 131);
+    --green-primary-color: rgb(21 128 61);
+    --green-secondary-color: rgb(27, 167, 78);
+}
+
+html {
+    background-color: var(--main-color);
+    color: white;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+button {
+    cursor: pointer;
+    min-width: 75px;
+    background-color: var(--button-main-color);
+    border: 0;
+    color: white;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: var(--button-secondary-color);
+}
+
+label {
+    display: flex;
+    justify-content: space-between;
+}
+
+details {
+    cursor: pointer;
+    margin-top: 20px;
+    background-color: var(--tertiary-color);
+    border-radius: 5px;
+    padding: 10px;
+}
+
+details div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 14px;
+    margin-left: 14px;
+    max-width: 250px;
+}
+
+input {
+    max-width: 75px;
+    height: 30px;
+    padding: 0;
+    background-color: #3a536b;
+    border: 0;
+    border-radius: 5px;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+}
+
+input:focus-within {
+    outline: 1px solid orange;
+    background: #4b6d8b;
+}
+
+input::placeholder {
+    font-size: 0.75rem;
+    opacity: 0.2;
+    font-weight: lighter;
+}
+
+caption {
+    font-family: 'Courier New', Courier, monospace;
+    font-style: italic;
+    margin-bottom: 20px;
+}
+
+table {
+    max-width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+thead {
+    margin-bottom: 10px;
+}
+
+tbody tr {
+    height: 35px;
+}
+
+tbody td {
+    text-align: center;
+}
+
+th {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 200;
+    font-style: italic;
+    font-size: 12px;
+    opacity: 0.5;
+}
+
+.calendar-day-inactive {
+    background-color: var(--main-color)
+}
+
+.calendar-day-inactive::placeholder {
+    color: var(--main-color);
+}
+
+.calendar-day {
+    background-color: var(--secondary-color);
+}
+
+.calendar-day-weekend {
+    background-color: var(--green-primary-color);
+}
+
+.project-row {
+    display: flex;
+    gap: 10px;
+}
+
+.project-row input {
+    margin-left: auto;
+    width: 120px;
+    max-width: 120px;
+}
+
+.project-button-active {
+    background-color: var(--green-primary-color);
+}
+
+.project-button-active:hover {
+    background-color: var(--green-secondary-color);
+}
