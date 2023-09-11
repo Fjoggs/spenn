@@ -2,11 +2,11 @@ import { renderCalendar } from "./src/calendar";
 import { startObserving } from "./src/observer";
 import { createEditRatesDetails, createProjectRow } from "./src/project";
 import { createStats } from "./src/stats";
+
 const app = document.getElementById("app");
 
 const stats = createStats();
 const table = renderCalendar();
-
 const editRates = createEditRatesDetails();
 
 if (app) {
@@ -16,8 +16,8 @@ if (app) {
   // } else {
   app.appendChild(table);
   const projectRow = createProjectRow();
-  app.appendChild(stats);
   app.appendChild(projectRow);
+  app.appendChild(stats);
   app.appendChild(editRates);
   // }
   const appObserver = new MutationObserver(() => {

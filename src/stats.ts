@@ -1,4 +1,12 @@
-import { createElement } from "./util";
+import { createElement, getActiveProjectName } from "./util";
+
+const createStatsDetails = () => {
+  const statsDetails = createElement("details", "stats-details");
+  const summary = createElement("summary", "stats-summary");
+  summary.textContent = "Hours / Income";
+  statsDetails.appendChild(summary);
+  return statsDetails;
+};
 
 const createStatRow = (id: string, text: string) => {
   const liElement = createElement("li");
@@ -10,6 +18,7 @@ const createStatRow = (id: string, text: string) => {
 };
 
 export const createStats = () => {
+  const details = createStatsDetails();
   const list = createElement("ul");
   const projectHoursListElement = createStatRow(
     "hours-project",
@@ -31,5 +40,6 @@ export const createStats = () => {
   list.appendChild(combinedHoursListElement);
   list.appendChild(projectIncomeListElement);
   list.appendChild(combinedIncomeListElement);
-  return list;
+  details.appendChild(list);
+  return details;
 };

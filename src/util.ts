@@ -9,6 +9,12 @@ export const createElement = (
   return element;
 };
 
+export const getActiveProjectName = () =>
+  document
+    .getElementById("table")
+    ?.getAttribute("data-active-project")
+    ?.toLocaleLowerCase();
+
 export const appendChildren = (children: HTMLElement[], root = document) => {
   children.forEach((child) => {
     root.appendChild(child);

@@ -1,4 +1,14 @@
+import { calculateDayIncome, calculateSum } from "./observer";
 import { createElement } from "./util";
+
+export type DayType = "weekday" | "saturday" | "sunday" | "inactive";
+
+export enum DayTypeEnum {
+  Weekday = "weekday",
+  Saturday = "saturday",
+  Sunday = "sunday",
+  Inactive = "inactive",
+}
 
 const currentDate = new Date();
 
@@ -52,6 +62,7 @@ const getLastDay = () => {
 const renderMonth = () => {
   const numOfDays = dateMapper[new Date().getMonth()] || 0;
   const numOfWeeks = Math.ceil(numOfDays / 7);
+
   const startDayOfMonth = getStartDay();
   const lastDayOfMonth = getLastDay();
   let date = 1;
@@ -103,16 +114,22 @@ const renderDay = (
   ) as HTMLInputElement;
   input.setAttribute("type", "text");
   input.setAttribute("placeholder", date.toString());
-  input.setAttribute("data-day-type", "weekday");
-  input.addEventListener("change", (event) => {
-    const target = event.target as HTMLInputElement;
-    if (target) {
-      input.value = target.value;
-      // input.textContent = target.value;
-      const table = document.getElementById("table");
-      const activeProject = table?.getAttribute("data-active-project");
-      input.setAttribute(`data-project-${activeProject}-value`, target.value);
+  input.setAttribute("data-day-type", DayTypeEnum.Weekday);
+  input.addEventListener("keypress", (event) => {
+    if (input.readOnly) {
+      return;
     }
+    const key = event.key.toLocaleLowerCase();
+    if (key === "f") {
+      event.preventDefault(); // Stop "change" event from firing
+      setHoursAndIncome(input, event, "7.5");
+    } else if (key === "d") {
+      event.preventDefault(); // Stop "change" event from firing
+      setHoursAndIncome(input, event, "0");
+    }
+  });
+  input.addEventListener("change", (event) => {
+    setHoursAndIncome(input, event);
   });
 
   const isWeekend = dayOfWeek > 4 && type !== "inactive";
@@ -120,18 +137,38 @@ const renderDay = (
   if (isWeekend) {
     className = "calendar-day-weekend";
     if (dayOfWeek === 5) {
-      input.setAttribute("data-day-type", "saturday");
+      input.setAttribute("data-day-type", DayTypeEnum.Saturday);
     } else {
-      input.setAttribute("data-day-type", "sunday");
+      input.setAttribute("data-day-type", DayTypeEnum.Sunday);
     }
   } else if (type === "inactive") {
     className = "calendar-day-inactive";
-    input.setAttribute("data-day-type", "inactive");
+    input.setAttribute("data-day-type", DayTypeEnum.Inactive);
   }
   input.classList.add(className);
   td.appendChild(input);
 
   return td;
+};
+
+const setHoursAndIncome = (
+  input: HTMLInputElement,
+  event: Event,
+  hours?: string
+) => {
+  const target = event.target as HTMLInputElement;
+  if (target) {
+    const value = hours ? hours : target.value;
+    input.value = value;
+    // input.textContent = target.value;
+    const table = document.getElementById("table");
+    const activeProject = table?.getAttribute("data-active-project");
+    input.setAttribute(`data-project-${activeProject}-hours`, value);
+    input.setAttribute(
+      `data-project-${activeProject}-income`,
+      Math.floor(calculateDayIncome(input)).toString()
+    );
+  }
 };
 
 export const renderCalendar = () => {

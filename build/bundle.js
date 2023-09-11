@@ -6,8 +6,162 @@ var createElement = (tagName, id) => {
   }
   return element;
 };
+var getActiveProjectName = () => document.getElementById("table")?.getAttribute("data-active-project")?.toLocaleLowerCase();
+
+// src/observer.ts
+var RecordType;
+(function(RecordType2) {
+  RecordType2["AttributeChange"] = "attributes";
+  RecordType2["ChildAddRemove"] = "childList";
+})(RecordType || (RecordType = {}));
+var calculateAndSetHours = (table, inputElement, totalProjectHours, oldValue) => {
+  const inputValue = Number(inputElement.value);
+  let combinedHours = document.getElementById("hours-combined");
+  let newProjectHours = "";
+  let newCombinedHours = "";
+  if (inputValue === 0) {
+    newProjectHours = (totalProjectHours - oldValue).toString();
+    newCombinedHours = (Number(combinedHours?.textContent) - oldValue).toString();
+  } else {
+    newProjectHours = (totalProjectHours + inputValue).toString();
+    newCombinedHours = (Number(combinedHours?.textContent) + inputValue).toString();
+  }
+  let projectHours = document.getElementById("hours-project");
+  if (combinedHours && projectHours) {
+    combinedHours.textContent = newCombinedHours;
+    projectHours.textContent = newProjectHours;
+    table.setAttribute(`data-project-${getActiveProjectName()}-total-hours`, newProjectHours);
+  }
+};
+var setActiveProject = (totalProjectHours) => {
+  const projectHours = document.getElementById("hours-project");
+  if (projectHours) {
+    projectHours.textContent = totalProjectHours.toString();
+  }
+  const tableBody = document.getElementById("tbody");
+  const weeks = tableBody?.childNodes;
+  if (weeks) {
+    weeks.forEach((week) => {
+      const days = week.childNodes;
+      if (days) {
+        days.forEach((day) => {
+          if (day.firstChild) {
+            const input = day.firstChild;
+            const value = input.getAttribute(`data-project-${getActiveProjectName()}-hours`);
+            if (value) {
+              input.value = value.toString();
+            } else {
+              input.value = "";
+            }
+          }
+        });
+      }
+    });
+  }
+};
+var onChangeObserver = (records) => {
+  const table = document.getElementById("table");
+  if (table) {
+    for (const record of records) {
+      switch (record.type) {
+        case RecordType.ChildAddRemove:
+          break;
+        case RecordType.AttributeChange:
+          handleAttributeChange(table, record);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+};
+var handleAttributeChange = (table, record) => {
+  const activeProjectName = getActiveProjectName();
+  const projectHoursName = `data-project-${activeProjectName}-hours`;
+  const totalProjectHours = Number(table.getAttribute(`data-project-${activeProjectName}-total-hours`));
+  const isCalendarChangeEvent = record.attributeName === projectHoursName;
+  const isProjectChangeEvent = record.attributeName === "data-active-project";
+  if (isCalendarChangeEvent) {
+    const inputElement = record.target;
+    const oldValue = Number(record.oldValue);
+    calculateAndSetHours(table, inputElement, totalProjectHours, oldValue);
+    const income = calculateDayIncome(inputElement, oldValue);
+    calculateCombinedIncome(income);
+  } else if (isProjectChangeEvent) {
+    setActiveProject(totalProjectHours);
+  }
+};
+var calculateDayIncome = (inputElement, oldValue = 0) => {
+  const hours = Number(inputElement.value);
+  const dayType = inputElement.getAttribute("data-day-type");
+  switch (dayType) {
+    case DayTypeEnum.Weekday:
+      return calculateSum(hours, "edit-rates-input-weekday", oldValue);
+    case DayTypeEnum.Saturday:
+      return calculateSum(hours, "edit-rates-input-saturday", oldValue);
+    case DayTypeEnum.Sunday:
+      return calculateSum(hours, "edit-rates-input-sunday", oldValue);
+    default:
+      return 0;
+  }
+};
+var calculateSum = (hours, rateInputId, oldValue) => {
+  const cut = document.getElementById("edit-rates-input-cut");
+  const tax = document.getElementById("edit-rates-input-tax");
+  const rate = document.getElementById(rateInputId);
+  const cutAsPercentage = Number(cut.value) / 100;
+  const taxAsPercentage = Number(tax.value) / 100;
+  const isReduction = oldValue > hours;
+  if (isReduction) {
+    const lostHours = oldValue - hours;
+    const reduction = -(lostHours * Number(rate.value) * cutAsPercentage * taxAsPercentage);
+    return reduction;
+  } else {
+    return hours * Number(rate.value) * cutAsPercentage * taxAsPercentage;
+  }
+};
+var calculateCombinedIncome = (income) => {
+  let incomeCombined = document.getElementById("income-combined");
+  if (incomeCombined) {
+    const currentIncome = removeCurrencyFormat(incomeCombined.textContent);
+    const total = currentIncome + income;
+    incomeCombined.textContent = formatAsCurrency(total);
+  }
+};
+var formatAsCurrency = (total) => {
+  const formatted = new Intl.NumberFormat("no-NO", {
+    style: "currency",
+    currency: "NOK"
+  }).format(total).toString();
+  return formatted;
+};
+var removeCurrencyFormat = (value) => {
+  if (value) {
+    value = value.replaceAll(/[kr\s]/g, "").replaceAll(",", ".");
+    return Number(value);
+  } else {
+    return 0;
+  }
+};
+var oberserverConfig = {
+  attributes: true,
+  childList: true,
+  subtree: true,
+  attributeOldValue: true
+};
+var startObserving = (table) => {
+  const observer = new MutationObserver(onChangeObserver);
+  observer.observe(table, oberserverConfig);
+};
 
 // src/calendar.ts
+var DayTypeEnum;
+(function(DayTypeEnum2) {
+  DayTypeEnum2["Weekday"] = "weekday";
+  DayTypeEnum2["Saturday"] = "saturday";
+  DayTypeEnum2["Sunday"] = "sunday";
+  DayTypeEnum2["Inactive"] = "inactive";
+})(DayTypeEnum || (DayTypeEnum = {}));
 var currentDate = new Date;
 var numOfDaysInFebruary = () => {
   const year = new Date().getFullYear();
@@ -89,32 +243,50 @@ var renderDay = (date, dayOfWeek, type = "active") => {
   const input = createElement("input", `date-input-${date}`);
   input.setAttribute("type", "text");
   input.setAttribute("placeholder", date.toString());
-  input.setAttribute("data-day-type", "weekday");
-  input.addEventListener("change", (event) => {
-    const target = event.target;
-    if (target) {
-      input.value = target.value;
-      const table = document.getElementById("table");
-      const activeProject = table?.getAttribute("data-active-project");
-      input.setAttribute(`data-project-${activeProject}-value`, target.value);
+  input.setAttribute("data-day-type", DayTypeEnum.Weekday);
+  input.addEventListener("keypress", (event) => {
+    if (input.readOnly) {
+      return;
     }
+    const key = event.key.toLocaleLowerCase();
+    if (key === "f") {
+      event.preventDefault();
+      setHoursAndIncome(input, event, "7.5");
+    } else if (key === "d") {
+      event.preventDefault();
+      setHoursAndIncome(input, event, "0");
+    }
+  });
+  input.addEventListener("change", (event) => {
+    setHoursAndIncome(input, event);
   });
   const isWeekend = dayOfWeek > 4 && type !== "inactive";
   let className = "calendar-day";
   if (isWeekend) {
     className = "calendar-day-weekend";
     if (dayOfWeek === 5) {
-      input.setAttribute("data-day-type", "saturday");
+      input.setAttribute("data-day-type", DayTypeEnum.Saturday);
     } else {
-      input.setAttribute("data-day-type", "sunday");
+      input.setAttribute("data-day-type", DayTypeEnum.Sunday);
     }
   } else if (type === "inactive") {
     className = "calendar-day-inactive";
-    input.setAttribute("data-day-type", "inactive");
+    input.setAttribute("data-day-type", DayTypeEnum.Inactive);
   }
   input.classList.add(className);
   td.appendChild(input);
   return td;
+};
+var setHoursAndIncome = (input, event, hours) => {
+  const target = event.target;
+  if (target) {
+    const value = hours ? hours : target.value;
+    input.value = value;
+    const table = document.getElementById("table");
+    const activeProject = table?.getAttribute("data-active-project");
+    input.setAttribute(`data-project-${activeProject}-hours`, value);
+    input.setAttribute(`data-project-${activeProject}-income`, Math.floor(calculateDayIncome(input)).toString());
+  }
 };
 var renderCalendar = () => {
   const table = createElement("table", "table");
@@ -143,86 +315,6 @@ var renderCalendar = () => {
   return table;
 };
 
-// src/observer.ts
-var getActiveProjectName = () => document.getElementById("table")?.getAttribute("data-active-project")?.toLocaleLowerCase();
-var ChangeEvent;
-(function(ChangeEvent2) {
-  ChangeEvent2["AttributeChange"] = "attributes";
-  ChangeEvent2["ChildAddRemove"] = "childList";
-})(ChangeEvent || (ChangeEvent = {}));
-var calculateProjectHours = (table, inputElement, totalProjectHours, oldValue) => {
-  const inputValue = Number(inputElement.value);
-  let combinedHours = document.getElementById("hours-combined");
-  let newProjectHours = "";
-  let newCombinedHours = "";
-  if (inputValue === 0) {
-    newProjectHours = (totalProjectHours - oldValue).toString();
-    newCombinedHours = (Number(combinedHours?.textContent) - oldValue).toString();
-  } else {
-    newProjectHours = (totalProjectHours + inputValue).toString();
-    newCombinedHours = (Number(combinedHours?.textContent) + inputValue).toString();
-  }
-  let projectHours = document.getElementById("hours-project");
-  if (combinedHours && projectHours) {
-    combinedHours.textContent = newCombinedHours;
-    projectHours.textContent = newProjectHours;
-    table.setAttribute(`data-project-${getActiveProjectName()}-total-hours`, newProjectHours);
-  }
-};
-var onChangeObserver = (records, observer) => {
-  const table = document.getElementById("table");
-  if (table) {
-    const activeProjectName = getActiveProjectName();
-    console.log("activeProjectName", activeProjectName);
-    const totalProjectHours = Number(table.getAttribute(`data-project-${activeProjectName}-total-hours`));
-    for (const record of records) {
-      if (record.type === ChangeEvent.ChildAddRemove) {
-      } else if (record.type === ChangeEvent.AttributeChange) {
-        const projectHours = document.getElementById("hours-project");
-        if (record.attributeName === `data-project-${activeProjectName}-value`) {
-          const inputElement = record.target;
-          calculateProjectHours(table, inputElement, totalProjectHours, Number(record.oldValue));
-        }
-        if (record.attributeName === "data-active-project") {
-          if (projectHours) {
-            projectHours.textContent = totalProjectHours.toString();
-          }
-          const tableBody = document.getElementById("tbody");
-          const trElements = tableBody?.childNodes;
-          if (trElements) {
-            trElements.forEach((tr) => {
-              const tdElements = tr.childNodes;
-              if (tdElements) {
-                tdElements.forEach((td) => {
-                  if (td.firstChild) {
-                    const input = td.firstChild;
-                    const value = input.getAttribute(`data-project-${activeProjectName}-value`);
-                    if (value) {
-                      input.value = value.toString();
-                    } else {
-                      input.value = "";
-                    }
-                  }
-                });
-              }
-            });
-          }
-        }
-      }
-    }
-  }
-};
-var oberserverConfig = {
-  attributes: true,
-  childList: true,
-  subtree: true,
-  attributeOldValue: true
-};
-var startObserving = (table) => {
-  const observer = new MutationObserver(onChangeObserver);
-  observer.observe(table, oberserverConfig);
-};
-
 // src/project.ts
 var createProjectButton = (name, projectRow) => {
   const projectButton = createElement("button", `project-${name}`);
@@ -243,21 +335,23 @@ var createProjectButton = (name, projectRow) => {
   });
   return projectButton;
 };
-var createAddProjectButton = (projectRow) => {
-  const addProjectInput = createElement("input", "addProject");
-  addProjectInput.setAttribute("placeholder", "Add new project");
-  addProjectInput.addEventListener("change", (event) => {
+var createAddNewProjectButton = (projectRow, viewToggler) => {
+  const addNewProjectInput = createElement("input", "addProject");
+  addNewProjectInput.setAttribute("placeholder", "Add new project");
+  addNewProjectInput.addEventListener("change", (event) => {
     const target = event.target;
     if (target) {
       const projectName = target.value;
       const newProjectButton = createProjectButton(projectName, projectRow);
-      addProjectInput.value = "";
-      projectRow.removeChild(addProjectInput);
+      addNewProjectInput.value = "";
+      projectRow.removeChild(viewToggler);
+      projectRow.removeChild(addNewProjectInput);
       projectRow.appendChild(newProjectButton);
-      projectRow.appendChild(addProjectInput);
+      projectRow.appendChild(addNewProjectInput);
+      projectRow.appendChild(viewToggler);
     }
   });
-  projectRow.appendChild(addProjectInput);
+  projectRow.appendChild(addNewProjectInput);
   return projectRow;
 };
 var createProjectRow = () => {
@@ -266,35 +360,122 @@ var createProjectRow = () => {
   const projectButton = createProjectButton("Default", projectRow);
   projectButton.classList.add("project-button-active");
   projectRow.appendChild(projectButton);
-  projectRow = createAddProjectButton(projectRow);
+  const viewToggler = createViewTogglerButtons();
+  projectRow = createAddNewProjectButton(projectRow, viewToggler);
+  projectRow.appendChild(viewToggler);
   return projectRow;
 };
+var createViewTogglerButtons = () => {
+  const buttonRow = createElement("div", "button-column");
+  const moneyButton = createElement("button", "toggle-view-money");
+  const hoursButton = createElement("button", "toggle-view-hours");
+  moneyButton.textContent = "$";
+  const activeClass = "project-button-active";
+  moneyButton.addEventListener("click", () => {
+    setMode("income");
+    hoursButton.className = "";
+    moneyButton.className = activeClass;
+  });
+  hoursButton.textContent = "H";
+  hoursButton.addEventListener("click", () => {
+    setMode("hours");
+    moneyButton.className = "";
+    hoursButton.className = activeClass;
+  });
+  hoursButton.className = activeClass;
+  buttonRow.appendChild(moneyButton);
+  buttonRow.appendChild(hoursButton);
+  document.addEventListener("keypress", (event) => {
+    const key = event.key.toLocaleLowerCase();
+    if (key === "h") {
+      setMode("hours");
+      moneyButton.className = "";
+      hoursButton.className = activeClass;
+    } else if (key === "m") {
+      setMode("income");
+      hoursButton.className = "";
+      moneyButton.className = activeClass;
+    }
+  });
+  return buttonRow;
+};
+var setMode = (mode) => {
+  const readOnly = mode === "income" ? true : false;
+  const tableBody = document.getElementById("tbody");
+  const weeks = tableBody?.childNodes;
+  if (weeks) {
+    weeks.forEach((week) => {
+      const days = week.childNodes;
+      if (days) {
+        days.forEach((day) => {
+          if (day.firstChild) {
+            const input = day.firstChild;
+            const value = input.getAttribute(`data-project-${getActiveProjectName()}-${mode}`);
+            input.readOnly = readOnly;
+            if (value) {
+              input.value = value.toString();
+            } else {
+              input.value = "";
+            }
+          }
+        });
+      }
+    });
+  }
+};
 var createEditRatesDetails = () => {
-  const editRates = createElement("details", "edit-rates");
+  const editRatesDetails = createElement("details", "edit-rates");
   const summary = createElement("summary", "edit-rates-summary");
   summary.textContent = "Edit project rates";
   const container = createElement("div", "edit-rates-container");
-  editRates.appendChild(summary);
+  editRatesDetails.appendChild(summary);
   const weekdayRates = createElement("input", "edit-rates-input-weekday");
+  weekdayRates.value = "1309";
+  weekdayRates.textContent = "1309";
   const weekdayLabel = createElement("label", "edit-rates-label-weekday");
   weekdayLabel.textContent = "Weekday rates";
   weekdayLabel.appendChild(weekdayRates);
   container.appendChild(weekdayLabel);
   const saturdayRates = createElement("input", "edit-rates-input-saturday");
+  saturdayRates.value = "1309";
+  saturdayRates.textContent = "1309";
   const saturdayLabel = createElement("label", "edit-rates-label-saturday");
   saturdayLabel.textContent = "Saturday rates";
   saturdayLabel.appendChild(saturdayRates);
   container.appendChild(saturdayLabel);
   const sundayRates = createElement("input", "edit-rates-input-sunday");
+  sundayRates.value = "1309";
+  sundayRates.textContent = "1309";
   const sundayLabel = createElement("label", "edit-rates-label-sunday");
   sundayLabel.textContent = "Sunday rates";
   sundayLabel.appendChild(sundayRates);
   container.appendChild(sundayLabel);
-  editRates.appendChild(container);
-  return editRates;
+  const percentAfterCuts = createElement("input", "edit-rates-input-cut");
+  percentAfterCuts.value = "45";
+  percentAfterCuts.textContent = "45";
+  const percentAfterCutsLabel = createElement("label", "edit-rates-label-cut");
+  percentAfterCutsLabel.textContent = "% cut (45% default)";
+  percentAfterCutsLabel.appendChild(percentAfterCuts);
+  container.appendChild(percentAfterCutsLabel);
+  const tax = createElement("input", "edit-rates-input-tax");
+  tax.value = "42";
+  tax.textContent = "42";
+  const taxLabel = createElement("label", "edit-rates-label-tax");
+  taxLabel.textContent = "% tax";
+  taxLabel.appendChild(tax);
+  container.appendChild(taxLabel);
+  editRatesDetails.appendChild(container);
+  return editRatesDetails;
 };
 
 // src/stats.ts
+var createStatsDetails = () => {
+  const statsDetails = createElement("details", "stats-details");
+  const summary = createElement("summary", "stats-summary");
+  summary.textContent = "Hours / Income";
+  statsDetails.appendChild(summary);
+  return statsDetails;
+};
 var createStatRow = (id, text) => {
   const liElement = createElement("li");
   liElement.textContent = text;
@@ -304,6 +485,7 @@ var createStatRow = (id, text) => {
   return liElement;
 };
 var createStats = () => {
+  const details = createStatsDetails();
   const list = createElement("ul");
   const projectHoursListElement = createStatRow("hours-project", "Hours (project): ");
   const combinedHoursListElement = createStatRow("hours-combined", "Hours (combined): ");
@@ -313,7 +495,8 @@ var createStats = () => {
   list.appendChild(combinedHoursListElement);
   list.appendChild(projectIncomeListElement);
   list.appendChild(combinedIncomeListElement);
-  return list;
+  details.appendChild(list);
+  return details;
 };
 
 // index.ts
@@ -324,8 +507,8 @@ var editRates = createEditRatesDetails();
 if (app) {
   app.appendChild(table);
   const projectRow = createProjectRow();
-  app.appendChild(stats2);
   app.appendChild(projectRow);
+  app.appendChild(stats2);
   app.appendChild(editRates);
   const appObserver = new MutationObserver(() => {
   });

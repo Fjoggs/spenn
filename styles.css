@@ -6,12 +6,28 @@
     --button-secondary-color: rgb(88, 106, 131);
     --green-primary-color: rgb(21 128 61);
     --green-secondary-color: rgb(27, 167, 78);
+    --focus-color: #4b6d8b;
+    --input-locked-bg: rgb(36, 51, 71);
+    --input-locked: #ce5353;
+}
+
+@media (max-width: 640px) {
+    html {
+        max-width: 100%;
+    }
+}
+
+@media (min-width: 641px) {
+    html {
+        max-width: 640px;
+    }
 }
 
 html {
+    margin: auto;
     background-color: var(--main-color);
     color: white;
-}
+} 
 
 main {
     display: flex;
@@ -26,6 +42,17 @@ main {
     flex-direction: column;
     justify-content: center;
     width: 100%;
+}
+
+#button-column {
+    display: flex;
+    justify-content: end;
+    gap: 20px;
+}
+
+#toggle-view-money, #toggle-view-hours {
+    min-width: 20px;
+    min-height: 20px;
 }
 
 button {
@@ -63,11 +90,22 @@ details div {
     max-width: 250px;
 }
 
+@media (max-width: 640px) {
+    input {
+        max-width: 40px;
+    }
+}
+
+@media (min-width: 641px) {
+    input {
+        max-width: 75px;
+    }
+}
+   
 input {
-    max-width: 75px;
     height: 30px;
     padding: 0;
-    background-color: #3a536b;
+    background-color: var(--secondary-color);
     border: 0;
     border-radius: 5px;
     color: white;
@@ -78,7 +116,19 @@ input {
 
 input:focus-within {
     outline: 1px solid orange;
-    background: #4b6d8b;
+    background: var(--focus-color);
+}
+
+input:read-only {
+    cursor: default;
+    outline: 0;
+    border-left: 3px solid var(--input-locked);
+    background-color: var(--input-locked-bg);
+}
+
+input:read-only:focus-within {
+    outline: 0;
+    background-color: var(--input-locked-bg);
 }
 
 input::placeholder {
@@ -86,6 +136,7 @@ input::placeholder {
     opacity: 0.2;
     font-weight: lighter;
 }
+
 
 caption {
     font-family: 'Courier New', Courier, monospace;
@@ -97,6 +148,7 @@ table {
     max-width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
+    margin-bottom: 20px;
 }
 
 thead {
@@ -123,8 +175,14 @@ th {
     background-color: var(--main-color)
 }
 
+.calendar-day-inactive:read-only {
+    background-color: var(--main-color);
+    border-left: 0;
+}
+
 .calendar-day-inactive::placeholder {
     color: var(--main-color);
+    
 }
 
 .calendar-day {
