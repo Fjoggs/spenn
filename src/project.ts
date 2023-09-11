@@ -1,12 +1,14 @@
 import { createElement, getActiveProjectName } from "./util";
 
 const createProjectButton = (name: string, projectRow: HTMLElement) => {
-  const projectButton = createElement("button", `project-${name}`);
+  const id = name.replaceAll(/\s/g, "-").toLocaleLowerCase();
+  const projectButton = createElement("button", `project-${id}`);
   projectButton.textContent = name;
   const table = document.getElementById("table");
-  table?.setAttribute(`data-project-${name}-total-hours`, "0");
+  table?.setAttribute(`data-project-${id}-total-hours`, "0");
+  table?.setAttribute(`data-project-${id}-income`, "0");
   projectButton.addEventListener("click", () => {
-    table?.setAttribute("data-active-project", name);
+    table?.setAttribute("data-active-project", id);
     projectButton.classList.add("project-button-active");
     projectRow.childNodes.forEach((button) => {
       if (button.nodeName !== "INPUT") {
@@ -17,8 +19,23 @@ const createProjectButton = (name: string, projectRow: HTMLElement) => {
         }
       }
     });
+    setRates("weekday");
+    setRates("saturday");
+    setRates("sunday");
+    setRates("cut");
+    setRates("tax");
   });
   return projectButton;
+};
+
+const setRates = (id: string) => {
+  const activeProject = getActiveProjectName();
+  const input = document.getElementById(
+    `edit-rates-input-${id}`
+  ) as HTMLInputElement;
+  if (input) {
+    input.setAttribute(`data-project-${activeProject}-rate-${id}`, input.value);
+  }
 };
 
 const createAddNewProjectButton = (
@@ -125,6 +142,25 @@ const setMode = (mode: "income" | "hours") => {
   }
 };
 
+const createRateInput = (id: string, label: string, defaultRate: string) => {
+  const activeProject = getActiveProjectName();
+  console.log("activeProject", activeProject);
+  const weekdayRates = createElement(
+    "input",
+    `edit-rates-input-${id}`
+  ) as HTMLInputElement;
+  weekdayRates.setAttribute(
+    `data-project-${activeProject}-rate-${id}`,
+    defaultRate
+  );
+  weekdayRates.value = defaultRate;
+  weekdayRates.textContent = defaultRate;
+  const weekdayLabel = createElement("label", `edit-rates-label-${id}`);
+  weekdayLabel.textContent = label;
+  weekdayLabel.appendChild(weekdayRates);
+  return weekdayLabel;
+};
+
 export const createEditRatesDetails = () => {
   const editRatesDetails = createElement("details", "edit-rates");
   const summary = createElement("summary", "edit-rates-summary");
@@ -132,60 +168,11 @@ export const createEditRatesDetails = () => {
   const container = createElement("div", "edit-rates-container");
   editRatesDetails.appendChild(summary);
 
-  const weekdayRates = createElement(
-    "input",
-    "edit-rates-input-weekday"
-  ) as HTMLInputElement;
-  weekdayRates.value = "1309";
-  weekdayRates.textContent = "1309";
-  const weekdayLabel = createElement("label", "edit-rates-label-weekday");
-  weekdayLabel.textContent = "Weekday rates";
-  weekdayLabel.appendChild(weekdayRates);
-  container.appendChild(weekdayLabel);
-
-  const saturdayRates = createElement(
-    "input",
-    "edit-rates-input-saturday"
-  ) as HTMLInputElement;
-  saturdayRates.value = "1309";
-  saturdayRates.textContent = "1309";
-  const saturdayLabel = createElement("label", "edit-rates-label-saturday");
-  saturdayLabel.textContent = "Saturday rates";
-  saturdayLabel.appendChild(saturdayRates);
-  container.appendChild(saturdayLabel);
-
-  const sundayRates = createElement(
-    "input",
-    "edit-rates-input-sunday"
-  ) as HTMLInputElement;
-  sundayRates.value = "1309";
-  sundayRates.textContent = "1309";
-  const sundayLabel = createElement("label", "edit-rates-label-sunday");
-  sundayLabel.textContent = "Sunday rates";
-  sundayLabel.appendChild(sundayRates);
-  container.appendChild(sundayLabel);
-
-  const percentAfterCuts = createElement(
-    "input",
-    "edit-rates-input-cut"
-  ) as HTMLInputElement;
-  percentAfterCuts.value = "45";
-  percentAfterCuts.textContent = "45";
-  const percentAfterCutsLabel = createElement("label", "edit-rates-label-cut");
-  percentAfterCutsLabel.textContent = "% cut (45% default)";
-  percentAfterCutsLabel.appendChild(percentAfterCuts);
-  container.appendChild(percentAfterCutsLabel);
-
-  const tax = createElement(
-    "input",
-    "edit-rates-input-tax"
-  ) as HTMLInputElement;
-  tax.value = "42";
-  tax.textContent = "42";
-  const taxLabel = createElement("label", "edit-rates-label-tax");
-  taxLabel.textContent = "% tax";
-  taxLabel.appendChild(tax);
-  container.appendChild(taxLabel);
+  container.appendChild(createRateInput("weekday", "Weekday", "1309"));
+  container.appendChild(createRateInput("saturday", "Saturday", "1309"));
+  container.appendChild(createRateInput("sunday", "Sunday", "1309"));
+  container.appendChild(createRateInput("cut", "% cut (45% default)", "45"));
+  container.appendChild(createRateInput("tax", "% tax", "42"));
 
   editRatesDetails.appendChild(container);
 

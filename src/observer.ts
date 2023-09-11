@@ -6,30 +6,20 @@ enum RecordType {
   ChildAddRemove = "childList",
 }
 
-const calculateAndSetHours = (
+const setProjectCombinedHours = (
   table: HTMLTableElement,
   inputElement: HTMLInputElement,
   totalProjectHours: number,
   oldValue: number
 ) => {
-  const inputValue = Number(inputElement.value);
-  let combinedHours = document.getElementById("hours-combined");
+  const hours = Number(inputElement.value);
+  const projectHours = document.getElementById("hours-project");
+  const combinedHours = document.getElementById("hours-combined");
   let newProjectHours = "";
   let newCombinedHours = "";
-  if (inputValue === 0) {
-    // Value is now empty
-    newProjectHours = (totalProjectHours - oldValue).toString();
-    newCombinedHours = (
-      Number(combinedHours?.textContent) - oldValue
-    ).toString();
-  } else {
-    // Value has changed
-    newProjectHours = (totalProjectHours + inputValue).toString();
-    newCombinedHours = (
-      Number(combinedHours?.textContent) + inputValue
-    ).toString();
-  }
-  let projectHours = document.getElementById("hours-project");
+  const change = hours - oldValue;
+  newProjectHours = (totalProjectHours + change).toString();
+  newCombinedHours = (Number(combinedHours?.textContent) + change).toString();
   if (combinedHours && projectHours) {
     combinedHours.textContent = newCombinedHours;
     projectHours.textContent = newProjectHours;
@@ -40,10 +30,15 @@ const calculateAndSetHours = (
   }
 };
 
-const setActiveProject = (totalProjectHours: number) => {
+const setActiveProject = (
+  totalProjectHours: number,
+  totalProjectIncome: number
+) => {
   const projectHours = document.getElementById("hours-project");
-  if (projectHours) {
+  const projectIncome = document.getElementById("income-project");
+  if (projectHours && projectIncome) {
     projectHours.textContent = totalProjectHours.toString();
+    projectIncome.textContent = formatAsCurrency(totalProjectIncome);
   }
   const tableBody = document.getElementById("tbody");
   const weeks = tableBody?.childNodes;
@@ -90,21 +85,24 @@ const handleAttributeChange = (
   table: HTMLTableElement,
   record: MutationRecord
 ) => {
-  const activeProjectName = getActiveProjectName();
-  const projectHoursName = `data-project-${activeProjectName}-hours`;
+  const activeProject = getActiveProjectName();
+  const projectHoursName = `data-project-${activeProject}-hours`;
   const totalProjectHours = Number(
-    table.getAttribute(`data-project-${activeProjectName}-total-hours`)
+    table.getAttribute(`data-project-${activeProject}-total-hours`)
+  );
+  const totalProjectIncome = Number(
+    table.getAttribute(`data-project-${activeProject}-income`)
   );
   const isCalendarChangeEvent = record.attributeName === projectHoursName;
   const isProjectChangeEvent = record.attributeName === "data-active-project";
   if (isCalendarChangeEvent) {
     const inputElement = record.target as HTMLInputElement;
     const oldValue = Number(record.oldValue);
-    calculateAndSetHours(table, inputElement, totalProjectHours, oldValue);
+    setProjectCombinedHours(table, inputElement, totalProjectHours, oldValue);
     const income = calculateDayIncome(inputElement, oldValue);
-    calculateCombinedIncome(income);
+    setProjectCombinedIncome(income, totalProjectIncome, table);
   } else if (isProjectChangeEvent) {
-    setActiveProject(totalProjectHours);
+    setActiveProject(totalProjectHours, totalProjectIncome);
   }
 };
 
@@ -117,47 +115,64 @@ export const calculateDayIncome = (
 
   switch (dayType) {
     case DayTypeEnum.Weekday:
-      return calculateSum(hours, "edit-rates-input-weekday", oldValue);
+      return calculateSum(hours, "weekday", oldValue);
 
     case DayTypeEnum.Saturday:
-      return calculateSum(hours, "edit-rates-input-saturday", oldValue);
+      return calculateSum(hours, "saturday", oldValue);
 
     case DayTypeEnum.Sunday:
-      return calculateSum(hours, "edit-rates-input-sunday", oldValue);
+      return calculateSum(hours, "sunday", oldValue);
     default:
       return 0;
   }
 };
 
 const calculateSum = (hours: number, rateInputId: string, oldValue: number) => {
-  const cut = document.getElementById(
+  const activeProject = getActiveProjectName();
+  const cutElement = document.getElementById(
     "edit-rates-input-cut"
   ) as HTMLInputElement;
-  const tax = document.getElementById(
+  const cut = cutElement.getAttribute(`data-project-${activeProject}-rate-cut`);
+  const taxElement = document.getElementById(
     "edit-rates-input-tax"
   ) as HTMLInputElement;
-  const rate = document.getElementById(rateInputId) as HTMLInputElement;
-  const cutAsPercentage = Number(cut.value) / 100;
-  const taxAsPercentage = Number(tax.value) / 100;
-  const isReduction = oldValue > hours;
-  if (isReduction) {
-    const lostHours = oldValue - hours;
-    const reduction = -(
-      lostHours *
-      Number(rate.value) *
-      cutAsPercentage *
-      taxAsPercentage
-    );
-    return reduction;
-  } else {
-    return hours * Number(rate.value) * cutAsPercentage * taxAsPercentage;
-  }
+  const tax = taxElement.getAttribute(`data-project-${activeProject}-rate-tax`);
+  const rateElement = document.getElementById(
+    `edit-rates-input-${rateInputId}`
+  ) as HTMLInputElement;
+  const rate = rateElement.getAttribute(
+    `data-project-${activeProject}-rate-${rateInputId}`
+  );
+  const cutAsPercentage = Number(cut) / 100;
+  const taxAsPercentage = Number(tax) / 100;
+  const change = hours - oldValue;
+  const income = change * Number(rate) * cutAsPercentage * taxAsPercentage;
+  return income;
 };
+
+const setProjectCombinedIncome = (
+  income: number,
+  totalProjectIncome: number,
+  table: HTMLTableElement
+) => {
+  const incomeProject = document.getElementById("income-project");
+  if (incomeProject) {
+    const activeProject = getActiveProjectName();
+    const total = Math.abs(totalProjectIncome + income);
+    incomeProject.textContent = formatAsCurrency(total);
+    table.setAttribute(
+      `data-project-${activeProject}-income`,
+      total.toString()
+    );
+  }
+  calculateCombinedIncome(income);
+};
+
 const calculateCombinedIncome = (income: number) => {
-  let incomeCombined = document.getElementById("income-combined");
+  const incomeCombined = document.getElementById("income-combined");
   if (incomeCombined) {
     const currentIncome = removeCurrencyFormat(incomeCombined.textContent);
-    const total = currentIncome + income;
+    const total = Math.abs(currentIncome + income);
     incomeCombined.textContent = formatAsCurrency(total);
   }
 };

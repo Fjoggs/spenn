@@ -6,7 +6,7 @@ var createElement = (tagName, id) => {
   }
   return element;
 };
-var getActiveProjectName = () => document.getElementById("table")?.getAttribute("data-active-project")?.toLocaleLowerCase();
+var getActiveProjectName = () => document.getElementById("table")?.getAttribute("data-active-project")?.toLocaleLowerCase() || "default";
 
 // src/observer.ts
 var RecordType;
@@ -14,29 +14,27 @@ var RecordType;
   RecordType2["AttributeChange"] = "attributes";
   RecordType2["ChildAddRemove"] = "childList";
 })(RecordType || (RecordType = {}));
-var calculateAndSetHours = (table, inputElement, totalProjectHours, oldValue) => {
-  const inputValue = Number(inputElement.value);
-  let combinedHours = document.getElementById("hours-combined");
+var setProjectCombinedHours = (table, inputElement, totalProjectHours, oldValue) => {
+  const hours = Number(inputElement.value);
+  const projectHours = document.getElementById("hours-project");
+  const combinedHours = document.getElementById("hours-combined");
   let newProjectHours = "";
   let newCombinedHours = "";
-  if (inputValue === 0) {
-    newProjectHours = (totalProjectHours - oldValue).toString();
-    newCombinedHours = (Number(combinedHours?.textContent) - oldValue).toString();
-  } else {
-    newProjectHours = (totalProjectHours + inputValue).toString();
-    newCombinedHours = (Number(combinedHours?.textContent) + inputValue).toString();
-  }
-  let projectHours = document.getElementById("hours-project");
+  const change = hours - oldValue;
+  newProjectHours = (totalProjectHours + change).toString();
+  newCombinedHours = (Number(combinedHours?.textContent) + change).toString();
   if (combinedHours && projectHours) {
     combinedHours.textContent = newCombinedHours;
     projectHours.textContent = newProjectHours;
     table.setAttribute(`data-project-${getActiveProjectName()}-total-hours`, newProjectHours);
   }
 };
-var setActiveProject = (totalProjectHours) => {
+var setActiveProject = (totalProjectHours, totalProjectIncome) => {
   const projectHours = document.getElementById("hours-project");
-  if (projectHours) {
+  const projectIncome = document.getElementById("income-project");
+  if (projectHours && projectIncome) {
     projectHours.textContent = totalProjectHours.toString();
+    projectIncome.textContent = formatAsCurrency(totalProjectIncome);
   }
   const tableBody = document.getElementById("tbody");
   const weeks = tableBody?.childNodes;
@@ -76,19 +74,20 @@ var onChangeObserver = (records) => {
   }
 };
 var handleAttributeChange = (table, record) => {
-  const activeProjectName = getActiveProjectName();
-  const projectHoursName = `data-project-${activeProjectName}-hours`;
-  const totalProjectHours = Number(table.getAttribute(`data-project-${activeProjectName}-total-hours`));
+  const activeProject = getActiveProjectName();
+  const projectHoursName = `data-project-${activeProject}-hours`;
+  const totalProjectHours = Number(table.getAttribute(`data-project-${activeProject}-total-hours`));
+  const totalProjectIncome = Number(table.getAttribute(`data-project-${activeProject}-income`));
   const isCalendarChangeEvent = record.attributeName === projectHoursName;
   const isProjectChangeEvent = record.attributeName === "data-active-project";
   if (isCalendarChangeEvent) {
     const inputElement = record.target;
     const oldValue = Number(record.oldValue);
-    calculateAndSetHours(table, inputElement, totalProjectHours, oldValue);
+    setProjectCombinedHours(table, inputElement, totalProjectHours, oldValue);
     const income = calculateDayIncome(inputElement, oldValue);
-    calculateCombinedIncome(income);
+    setProjectCombinedIncome(income, totalProjectIncome, table);
   } else if (isProjectChangeEvent) {
-    setActiveProject(totalProjectHours);
+    setActiveProject(totalProjectHours, totalProjectIncome);
   }
 };
 var calculateDayIncome = (inputElement, oldValue = 0) => {
@@ -96,35 +95,44 @@ var calculateDayIncome = (inputElement, oldValue = 0) => {
   const dayType = inputElement.getAttribute("data-day-type");
   switch (dayType) {
     case DayTypeEnum.Weekday:
-      return calculateSum(hours, "edit-rates-input-weekday", oldValue);
+      return calculateSum(hours, "weekday", oldValue);
     case DayTypeEnum.Saturday:
-      return calculateSum(hours, "edit-rates-input-saturday", oldValue);
+      return calculateSum(hours, "saturday", oldValue);
     case DayTypeEnum.Sunday:
-      return calculateSum(hours, "edit-rates-input-sunday", oldValue);
+      return calculateSum(hours, "sunday", oldValue);
     default:
       return 0;
   }
 };
 var calculateSum = (hours, rateInputId, oldValue) => {
-  const cut = document.getElementById("edit-rates-input-cut");
-  const tax = document.getElementById("edit-rates-input-tax");
-  const rate = document.getElementById(rateInputId);
-  const cutAsPercentage = Number(cut.value) / 100;
-  const taxAsPercentage = Number(tax.value) / 100;
-  const isReduction = oldValue > hours;
-  if (isReduction) {
-    const lostHours = oldValue - hours;
-    const reduction = -(lostHours * Number(rate.value) * cutAsPercentage * taxAsPercentage);
-    return reduction;
-  } else {
-    return hours * Number(rate.value) * cutAsPercentage * taxAsPercentage;
+  const activeProject = getActiveProjectName();
+  const cutElement = document.getElementById("edit-rates-input-cut");
+  const cut = cutElement.getAttribute(`data-project-${activeProject}-rate-cut`);
+  const taxElement = document.getElementById("edit-rates-input-tax");
+  const tax = taxElement.getAttribute(`data-project-${activeProject}-rate-tax`);
+  const rateElement = document.getElementById(`edit-rates-input-${rateInputId}`);
+  const rate = rateElement.getAttribute(`data-project-${activeProject}-rate-${rateInputId}`);
+  const cutAsPercentage = Number(cut) / 100;
+  const taxAsPercentage = Number(tax) / 100;
+  const change = hours - oldValue;
+  const income = change * Number(rate) * cutAsPercentage * taxAsPercentage;
+  return income;
+};
+var setProjectCombinedIncome = (income, totalProjectIncome, table) => {
+  const incomeProject = document.getElementById("income-project");
+  if (incomeProject) {
+    const activeProject = getActiveProjectName();
+    const total = Math.abs(totalProjectIncome + income);
+    incomeProject.textContent = formatAsCurrency(total);
+    table.setAttribute(`data-project-${activeProject}-income`, total.toString());
   }
+  calculateCombinedIncome(income);
 };
 var calculateCombinedIncome = (income) => {
-  let incomeCombined = document.getElementById("income-combined");
+  const incomeCombined = document.getElementById("income-combined");
   if (incomeCombined) {
     const currentIncome = removeCurrencyFormat(incomeCombined.textContent);
-    const total = currentIncome + income;
+    const total = Math.abs(currentIncome + income);
     incomeCombined.textContent = formatAsCurrency(total);
   }
 };
@@ -290,7 +298,7 @@ var setHoursAndIncome = (input, event, hours) => {
 };
 var renderCalendar = () => {
   const table = createElement("table", "table");
-  table.setAttribute("data-active-project", "Default");
+  table.setAttribute("data-active-project", "default");
   const caption = createElement("caption");
   caption.textContent = currentDate.toLocaleString("en-GB", { month: "long" });
   table.appendChild(caption);
@@ -317,12 +325,14 @@ var renderCalendar = () => {
 
 // src/project.ts
 var createProjectButton = (name, projectRow) => {
-  const projectButton = createElement("button", `project-${name}`);
+  const id = name.replaceAll(/\s/g, "-").toLocaleLowerCase();
+  const projectButton = createElement("button", `project-${id}`);
   projectButton.textContent = name;
   const table = document.getElementById("table");
-  table?.setAttribute(`data-project-${name}-total-hours`, "0");
+  table?.setAttribute(`data-project-${id}-total-hours`, "0");
+  table?.setAttribute(`data-project-${id}-income`, "0");
   projectButton.addEventListener("click", () => {
-    table?.setAttribute("data-active-project", name);
+    table?.setAttribute("data-active-project", id);
     projectButton.classList.add("project-button-active");
     projectRow.childNodes.forEach((button) => {
       if (button.nodeName !== "INPUT") {
@@ -332,8 +342,20 @@ var createProjectButton = (name, projectRow) => {
         }
       }
     });
+    setRates("weekday");
+    setRates("saturday");
+    setRates("sunday");
+    setRates("cut");
+    setRates("tax");
   });
   return projectButton;
+};
+var setRates = (id) => {
+  const activeProject = getActiveProjectName();
+  const input = document.getElementById(`edit-rates-input-${id}`);
+  if (input) {
+    input.setAttribute(`data-project-${activeProject}-rate-${id}`, input.value);
+  }
 };
 var createAddNewProjectButton = (projectRow, viewToggler) => {
   const addNewProjectInput = createElement("input", "addProject");
@@ -423,47 +445,29 @@ var setMode = (mode) => {
     });
   }
 };
+var createRateInput = (id, label, defaultRate) => {
+  const activeProject = getActiveProjectName();
+  console.log("activeProject", activeProject);
+  const weekdayRates = createElement("input", `edit-rates-input-${id}`);
+  weekdayRates.setAttribute(`data-project-${activeProject}-rate-${id}`, defaultRate);
+  weekdayRates.value = defaultRate;
+  weekdayRates.textContent = defaultRate;
+  const weekdayLabel = createElement("label", `edit-rates-label-${id}`);
+  weekdayLabel.textContent = label;
+  weekdayLabel.appendChild(weekdayRates);
+  return weekdayLabel;
+};
 var createEditRatesDetails = () => {
   const editRatesDetails = createElement("details", "edit-rates");
   const summary = createElement("summary", "edit-rates-summary");
   summary.textContent = "Edit project rates";
   const container = createElement("div", "edit-rates-container");
   editRatesDetails.appendChild(summary);
-  const weekdayRates = createElement("input", "edit-rates-input-weekday");
-  weekdayRates.value = "1309";
-  weekdayRates.textContent = "1309";
-  const weekdayLabel = createElement("label", "edit-rates-label-weekday");
-  weekdayLabel.textContent = "Weekday rates";
-  weekdayLabel.appendChild(weekdayRates);
-  container.appendChild(weekdayLabel);
-  const saturdayRates = createElement("input", "edit-rates-input-saturday");
-  saturdayRates.value = "1309";
-  saturdayRates.textContent = "1309";
-  const saturdayLabel = createElement("label", "edit-rates-label-saturday");
-  saturdayLabel.textContent = "Saturday rates";
-  saturdayLabel.appendChild(saturdayRates);
-  container.appendChild(saturdayLabel);
-  const sundayRates = createElement("input", "edit-rates-input-sunday");
-  sundayRates.value = "1309";
-  sundayRates.textContent = "1309";
-  const sundayLabel = createElement("label", "edit-rates-label-sunday");
-  sundayLabel.textContent = "Sunday rates";
-  sundayLabel.appendChild(sundayRates);
-  container.appendChild(sundayLabel);
-  const percentAfterCuts = createElement("input", "edit-rates-input-cut");
-  percentAfterCuts.value = "45";
-  percentAfterCuts.textContent = "45";
-  const percentAfterCutsLabel = createElement("label", "edit-rates-label-cut");
-  percentAfterCutsLabel.textContent = "% cut (45% default)";
-  percentAfterCutsLabel.appendChild(percentAfterCuts);
-  container.appendChild(percentAfterCutsLabel);
-  const tax = createElement("input", "edit-rates-input-tax");
-  tax.value = "42";
-  tax.textContent = "42";
-  const taxLabel = createElement("label", "edit-rates-label-tax");
-  taxLabel.textContent = "% tax";
-  taxLabel.appendChild(tax);
-  container.appendChild(taxLabel);
+  container.appendChild(createRateInput("weekday", "Weekday", "1309"));
+  container.appendChild(createRateInput("saturday", "Saturday", "1309"));
+  container.appendChild(createRateInput("sunday", "Sunday", "1309"));
+  container.appendChild(createRateInput("cut", "% cut (45% default)", "45"));
+  container.appendChild(createRateInput("tax", "% tax", "42"));
   editRatesDetails.appendChild(container);
   return editRatesDetails;
 };

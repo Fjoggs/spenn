@@ -3,6 +3,7 @@ const bundle = async () => {
     entrypoints: ["./index.ts"],
     outdir: "./build/",
     naming: "[dir]/bundle.js",
+    // sourcemap: "inline",
     // minify: true,
   });
 };

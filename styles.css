@@ -4,6 +4,7 @@
     --tertiary-color: rgb(33, 45, 65);
     --button-main-color: rgb(71 85 105);
     --button-secondary-color: rgb(88, 106, 131);
+    --weekend-color: rgb(72, 100, 77);
     --green-primary-color: rgb(21 128 61);
     --green-secondary-color: rgb(27, 167, 78);
     --focus-color: #4b6d8b;
@@ -24,6 +25,7 @@
 }
 
 html {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: auto;
     background-color: var(--main-color);
     color: white;
@@ -81,6 +83,18 @@ details {
     padding: 10px;
 }
 
+details ul {
+    list-style: none;
+    margin: 0;
+    padding-top: 14px;
+    padding-left: 14px;
+    font-weight: 300;
+}
+
+details li {
+    padding-bottom: 5px;
+}
+
 details div {
     display: flex;
     flex-direction: column;
@@ -88,6 +102,10 @@ details div {
     margin-top: 14px;
     margin-left: 14px;
     max-width: 250px;
+}
+
+summary {
+    font-weight: bold;
 }
 
 @media (max-width: 640px) {
@@ -139,7 +157,6 @@ input::placeholder {
 
 
 caption {
-    font-family: 'Courier New', Courier, monospace;
     font-style: italic;
     margin-bottom: 20px;
 }
@@ -163,8 +180,24 @@ tbody td {
     text-align: center;
 }
 
+@media (max-width: 640px) {
+    th {
+        max-width: 20px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+}
+
+@media (min-width: 641px) {
+    th {
+        max-width: 100px;
+        overflow: auto;
+        white-space: normal;
+    }
+}
+
 th {
-    font-family: 'Courier New', Courier, monospace;
     font-weight: 200;
     font-style: italic;
     font-size: 12px;
@@ -190,7 +223,7 @@ th {
 }
 
 .calendar-day-weekend {
-    background-color: var(--green-primary-color);
+    background-color: var(--weekend-color);
 }
 
 .project-row {
@@ -210,4 +243,8 @@ th {
 
 .project-button-active:hover {
     background-color: var(--green-secondary-color);
+}
+
+#edit-rates-container input {
+    max-width: 75px;
 }
