@@ -14,9 +14,3 @@ export const getActiveProjectName = () =>
     .getElementById("table")
     ?.getAttribute("data-active-project")
     ?.toLocaleLowerCase() || "default";
-
-export const appendChildren = (children: HTMLElement[], root = document) => {
-  children.forEach((child) => {
-    root.appendChild(child);
-  });
-};

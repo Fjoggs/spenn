@@ -172,7 +172,7 @@ const setHoursAndIncome = (
 };
 
 export const renderCalendar = () => {
-  const table = createElement("table", "table");
+  const table = createElement("table", "table") as HTMLTableElement;
   table.setAttribute("data-active-project", "default");
   const caption = createElement("caption");
   caption.textContent = currentDate.toLocaleString("en-GB", { month: "long" });
