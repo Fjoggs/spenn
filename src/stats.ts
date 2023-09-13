@@ -1,8 +1,8 @@
-import { createElement } from "./util";
+import { DetailsElement, createDetailsElement, createElement } from "./util";
 
 export interface Stats {
   statRows: StatRow[];
-  statDetails: StatDetails;
+  statDetails: DetailsElement;
 }
 
 type StatRow = {
@@ -10,32 +10,14 @@ type StatRow = {
   text: string;
 };
 
-type StatDetails = {
-  detailId: string;
-  summaryId: string;
-  summaryText: string;
-};
-
 export const createStats = ({ statRows, statDetails }: Stats) => {
-  const details = createStatsDetails(statDetails);
+  const details = createDetailsElement(statDetails);
   const list = createElement("ul");
   statRows.forEach((statRow) => {
     list.appendChild(createStatRow(statRow));
   });
   details.appendChild(list);
   return details;
-};
-
-const createStatsDetails = ({
-  detailId,
-  summaryId,
-  summaryText,
-}: StatDetails) => {
-  const statsDetails = createElement("details", detailId);
-  const summary = createElement("summary", summaryId);
-  summary.textContent = summaryText;
-  statsDetails.appendChild(summary);
-  return statsDetails;
 };
 
 const createStatRow = ({ id, text }: StatRow) => {

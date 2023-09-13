@@ -1,31 +1,39 @@
 import { renderCalendar } from "./src/calendar";
 import { startObserving } from "./src/observer";
-import { createEditRatesDetails, createProjectRow } from "./src/project";
-import { statsState } from "./src/state";
+import { createProjectRow } from "./src/project";
+import { createEditRatesDetails } from "./src/rate";
+import { State, defaultState } from "./src/state";
 import { createStats } from "./src/stats";
 
 const app = document.getElementById("app");
 
-const stats = createStats(statsState);
 const table = renderCalendar();
-const editRates = createEditRatesDetails();
 
 if (app) {
-  // if (localStorage.getItem("state")) {
-  //   console.log("fetching state");
-  //   app.innerHTML = localStorage.getItem("state") || "";
-  // } else {
+  let state: State = defaultState;
+  const localStorageKey = "spenn-app-state";
+  // if (localStorage.getItem(localStorageKey)) {
+  //   state = JSON.parse(localStorage.getItem(localStorageKey) || "");
+  // }
+  const stats = createStats(state.stats);
+  const editRates = createEditRatesDetails(state.rate);
+
   app.appendChild(table);
-  const projectRow = createProjectRow();
+  const projectRow = createProjectRow(state.filterRow);
   app.appendChild(projectRow);
   app.appendChild(stats);
   app.appendChild(editRates);
   // }
   // const appObserver = new MutationObserver(() => {
-  // console.log("storing in storage");
-  // localStorage.setItem("state", app.innerHTML);
+  //   console.log("storing in storage");
+  //   localStorage.setItem(localStorageKey, JSON.stringify(defaultState));
   // });
-  // appObserver.observe(app, oberserverConfig);
+  // appObserver.observe(app, {
+  //   attributes: true,
+  //   childList: true,
+  //   subtree: true,
+  //   attributeOldValue: true,
+  // });
 }
 
 startObserving(table);
