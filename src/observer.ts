@@ -1,4 +1,4 @@
-import { DayType, DayTypeEnum } from "./calendar";
+import { DayTypeEnum } from "./calendar";
 import { getActiveProjectName } from "./util";
 
 enum RecordType {

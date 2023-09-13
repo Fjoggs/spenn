@@ -1,5 +1,5 @@
 import { calculateDayIncome, calculateSum } from "./observer";
-import { createElement } from "./util";
+import { createElement, getActiveProjectName } from "./util";
 
 export type DayType = "weekday" | "saturday" | "sunday" | "inactive";
 
@@ -160,9 +160,7 @@ const setHoursAndIncome = (
   if (target) {
     const value = hours ? hours : target.value;
     input.value = value;
-    // input.textContent = target.value;
-    const table = document.getElementById("table");
-    const activeProject = table?.getAttribute("data-active-project");
+    const activeProject = getActiveProjectName();
     input.setAttribute(`data-project-${activeProject}-hours`, value);
     input.setAttribute(
       `data-project-${activeProject}-income`,

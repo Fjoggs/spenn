@@ -1,13 +1,26 @@
-import { Filter, FilterRow } from "./filters";
+import { FilterRow } from "./filters";
+import { ProjectRow } from "./project";
 import { RateDetails } from "./rate";
 import { Stats } from "./stats";
 import { getActiveProjectName } from "./util";
 
 export interface State {
+  table: Table;
   stats: Stats;
   rate: RateDetails;
-  filterRow: FilterRow;
+  projectRow: ProjectRow;
 }
+
+export interface Table {
+  dataAttributes: Array<(id: string) => string>;
+}
+
+const table: Table = {
+  dataAttributes: [
+    (id: string) => `data-project-${id}-total-hours`,
+    (id: string) => `data-project-${id}-income`,
+  ],
+};
 
 const stats: Stats = {
   statRows: [
@@ -84,7 +97,7 @@ const rate: RateDetails = {
 };
 
 const filterRow: FilterRow = {
-  buttonRowId: "button-column",
+  filterRowId: "button-column",
   filters: [
     {
       id: "toggle-view-money",
@@ -104,8 +117,16 @@ const filterRow: FilterRow = {
   ],
 };
 
+const projectRow: ProjectRow = {
+  defaultProjectName: "Default",
+  inputId: "add-project",
+  inputPlaceholder: "Add new project",
+  filterRow,
+};
+
 export const defaultState: State = {
+  table,
   stats,
   rate,
-  filterRow,
+  projectRow,
 };

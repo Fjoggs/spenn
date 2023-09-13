@@ -6,7 +6,7 @@ export type RateDetails = {
   rateInputs: Rate[];
 };
 
-type Rate = {
+export type Rate = {
   id: string;
   label: string;
   labelId: string;

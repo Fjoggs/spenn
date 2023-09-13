@@ -1,25 +1,40 @@
-import { FilterRow, createFilterRow } from "./filters";
-import { createElement, getActiveProjectName } from "./util";
+import { Filter, FilterRow, createFilterRow } from "./filters";
+import { Rate, RateDetails } from "./rate";
+import { Table } from "./state";
+import { createElement } from "./util";
 
 export interface ProjectRow {
+  defaultProjectName: string;
   inputId: string;
   inputPlaceholder: string;
+  filterRow: FilterRow;
 }
 
-export const createProjectRow = (filterRow: FilterRow) => {
+export const createProjectRow = (
+  { defaultProjectName, inputId, inputPlaceholder, filterRow }: ProjectRow,
+  rates: Rate[],
+  table: Table
+) => {
   let projectRow = createElement("div");
   projectRow.className = "project-row";
-  const projectButton = createProjectButton("Default", projectRow);
-  projectButton.classList.add("project-button-active");
-  projectRow.appendChild(projectButton);
-  const filters = createFilterRow(filterRow);
-  projectRow = createAddNewProjectButton(
-    "Add new project",
-    "add-project",
+  const projectButton = createProjectButton(
+    defaultProjectName,
     projectRow,
-    filters
+    rates,
+    table
   );
-  projectRow.appendChild(filters);
+  projectButton.className = "project-button-active";
+  projectRow.appendChild(projectButton);
+  const filterRowElement = createFilterRow(filterRow);
+  projectRow = createAddNewProjectButton(
+    inputId,
+    inputPlaceholder,
+    projectRow,
+    filterRowElement,
+    rates,
+    table
+  );
+  projectRow.appendChild(filterRowElement);
   return projectRow;
 };
 
@@ -27,7 +42,9 @@ const createAddNewProjectButton = (
   inputId: string,
   inputPlaceholder: string,
   projectRow: HTMLElement,
-  viewToggler: HTMLElement
+  filterRow: HTMLElement,
+  rates: Rate[],
+  table: Table
 ) => {
   const addNewProjectInput = createElement(
     "input",
@@ -38,53 +55,62 @@ const createAddNewProjectButton = (
     const target = event.target as HTMLInputElement;
     if (target) {
       const projectName = target.value;
-      const newProjectButton = createProjectButton(projectName, projectRow);
+      const newProjectButton = createProjectButton(
+        projectName,
+        projectRow,
+        rates,
+        table
+      );
       addNewProjectInput.value = "";
-      projectRow.removeChild(viewToggler);
+      projectRow.removeChild(filterRow);
       projectRow.removeChild(addNewProjectInput);
       projectRow.appendChild(newProjectButton);
       projectRow.appendChild(addNewProjectInput);
-      projectRow.appendChild(viewToggler);
+      projectRow.appendChild(filterRow);
     }
   });
   projectRow.appendChild(addNewProjectInput);
   return projectRow;
 };
 
-const createProjectButton = (name: string, projectRow: HTMLElement) => {
-  const id = name.replaceAll(/\s/g, "-").toLocaleLowerCase();
-  const projectButton = createElement("button", `project-${id}`);
-  projectButton.textContent = name;
-  const table = document.getElementById("table");
-  table?.setAttribute(`data-project-${id}-total-hours`, "0");
-  table?.setAttribute(`data-project-${id}-income`, "0");
-  projectButton.addEventListener("click", () => {
-    table?.setAttribute("data-active-project", id);
-    projectButton.classList.add("project-button-active");
-    projectRow.childNodes.forEach((button) => {
-      if (button.nodeName !== "INPUT") {
-        let buttonAsElement = button as HTMLButtonElement;
+const createProjectButton = (
+  name: string,
+  projectRow: HTMLElement,
+  rates: Rate[],
+  table: Table
+) => {
+  const id = removeWhiteSpace(name);
+  const button = createElement("button", `project-${id}`);
+  button.textContent = name;
+  const tableElement = document.getElementById("table");
+  table.dataAttributes.forEach((dataAttribute) => {
+    tableElement?.setAttribute(dataAttribute(id), "0");
+  });
+  button.addEventListener("click", () => {
+    tableElement?.setAttribute("data-active-project", id);
+    button.classList.add("project-button-active");
+    projectRow.childNodes.forEach((projectButton) => {
+      if (projectButton.nodeName !== "INPUT") {
+        let buttonAsElement = projectButton as HTMLButtonElement;
         if (buttonAsElement.outerText !== name) {
           // Dont reset itself
           buttonAsElement.className = "";
         }
       }
     });
-    setRates("weekday");
-    setRates("saturday");
-    setRates("sunday");
-    setRates("cut");
-    setRates("tax");
+    rates.forEach((rate) => {
+      setRates(rate.id, rate.dataAttribute);
+    });
   });
-  return projectButton;
+  return button;
 };
 
-const setRates = (id: string) => {
-  const activeProject = getActiveProjectName();
-  const input = document.getElementById(
-    `edit-rates-input-${id}`
-  ) as HTMLInputElement;
+const setRates = (inputId: string, dataAttribute: Function) => {
+  const input = document.getElementById(inputId) as HTMLInputElement;
   if (input) {
-    input.setAttribute(`data-project-${activeProject}-rate-${id}`, input.value);
+    input.setAttribute(dataAttribute(), input.value);
   }
 };
+
+const removeWhiteSpace = (name: string) =>
+  name.replaceAll(/\s/g, "-").toLocaleLowerCase();

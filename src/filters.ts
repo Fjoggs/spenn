@@ -1,7 +1,7 @@
 import { createElement } from "./util";
 
 export type FilterRow = {
-  buttonRowId: string;
+  filterRowId: string;
   filters: Filter[];
 };
 
@@ -16,8 +16,8 @@ export type Filter = {
 
 const activeClassName = "project-button-active";
 
-export const createFilterRow = ({ buttonRowId, filters }: FilterRow) => {
-  const filterRow = createElement("div", buttonRowId);
+export const createFilterRow = ({ filterRowId, filters }: FilterRow) => {
+  const filterRow = createElement("div", filterRowId);
 
   const buttons = filters.map((filter) => {
     const button = createFilterButton(filter, filterRow);
@@ -76,7 +76,6 @@ const activateFilter = (dataAttribute: Function, readOnly: boolean) => {
       if (days) {
         days.forEach((day) => {
           if (day.firstChild) {
-            console.log("dataAttribute()", dataAttribute());
             const input = day.firstChild as HTMLInputElement;
             const value = input.getAttribute(dataAttribute());
             input.readOnly = readOnly;

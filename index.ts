@@ -19,7 +19,11 @@ if (app) {
   const editRates = createEditRatesDetails(state.rate);
 
   app.appendChild(table);
-  const projectRow = createProjectRow(state.filterRow);
+  const projectRow = createProjectRow(
+    state.projectRow,
+    state.rate.rateInputs,
+    state.table
+  );
   app.appendChild(projectRow);
   app.appendChild(stats);
   app.appendChild(editRates);
