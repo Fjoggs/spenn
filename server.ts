@@ -30,11 +30,5 @@ const server = Bun.serve({
   },
 });
 
-const respondWithHtml = {
-  headers: {
-    "Content-Type": "text/html",
-  },
-};
-
 bundle();
 console.log(`Listening on localhost:${server.port}`);

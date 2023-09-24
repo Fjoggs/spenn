@@ -1,0 +1,1 @@
+while inotifywait -e modify src/; do bun bundle; done

@@ -1,4 +1,4 @@
-import { calculateDayIncome, calculateSum } from "./observer";
+import { calculateDayNetIncome } from "./observer";
 import { createElement, getActiveProjectName } from "./util";
 
 export type DayType = "weekday" | "saturday" | "sunday" | "inactive";
@@ -12,51 +12,31 @@ export enum DayTypeEnum {
 
 const currentDate = new Date();
 
-const numOfDaysInFebruary = () => {
-  const year = new Date().getFullYear();
-  if (year % 4 === 0) {
-    if (year % 100 === 0 && year % 400 === 0) {
-      return 29;
-    } else {
-      return 28;
-    }
-  }
-};
-
-const dateMapper = [
-  31,
-  numOfDaysInFebruary(),
-  31,
-  30,
-  31,
-  30,
-  31,
-  31,
-  30,
-  31,
-  30,
-  31,
-];
-
-const getStartDay = () => {
-  const today = new Date();
-  const firstDayOfMonth = new Date(
-    today.getFullYear(),
-    today.getMonth()
-  ).getUTCDay();
-  return firstDayOfMonth;
-};
-
-const getLastDay = () => {
-  const today = new Date();
-  const month = today.getMonth();
-  const numOfDays = dateMapper[month];
-  const lastDayOfMonth = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    numOfDays
-  );
-  return lastDayOfMonth.getUTCDay();
+export const renderCalendar = () => {
+  const table = createElement("table", "table") as HTMLTableElement;
+  table.setAttribute("data-active-project", "default");
+  const caption = createElement("caption");
+  caption.textContent = currentDate.toLocaleString("en-GB", { month: "long" });
+  table.appendChild(caption);
+  const thead = createElement("thead");
+  const days = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+  days.forEach((day) => {
+    const element = createElement("th");
+    element.textContent = day;
+    thead.appendChild(element);
+  });
+  const tbodyMonths = renderMonth();
+  table.appendChild(thead);
+  table.appendChild(tbodyMonths);
+  return table;
 };
 
 const renderMonth = () => {
@@ -101,6 +81,53 @@ const renderMonth = () => {
   }
   return tbody;
 };
+
+const getStartDay = () => {
+  const today = new Date();
+  const firstDayOfMonth = new Date(
+    today.getFullYear(),
+    today.getMonth()
+  ).getUTCDay();
+  return firstDayOfMonth;
+};
+
+const getLastDay = () => {
+  const today = new Date();
+  const month = today.getMonth();
+  const numOfDays = dateMapper[month];
+  const lastDayOfMonth = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    numOfDays
+  );
+  return lastDayOfMonth.getUTCDay();
+};
+
+const numOfDaysInFebruary = () => {
+  const year = new Date().getFullYear();
+  if (year % 4 === 0) {
+    if (year % 100 === 0 && year % 400 === 0) {
+      return 29;
+    } else {
+      return 28;
+    }
+  }
+};
+
+const dateMapper = [
+  31,
+  numOfDaysInFebruary(),
+  31,
+  30,
+  31,
+  30,
+  31,
+  31,
+  30,
+  31,
+  30,
+  31,
+];
 
 const renderDay = (
   date: number,
@@ -157,41 +184,12 @@ const setHoursAndIncome = (
   hours?: string
 ) => {
   const target = event.target as HTMLInputElement;
-  if (target) {
-    const value = hours ? hours : target.value;
-    input.value = value;
-    const activeProject = getActiveProjectName();
-    input.setAttribute(`data-project-${activeProject}-hours`, value);
-    input.setAttribute(
-      `data-project-${activeProject}-income`,
-      Math.floor(calculateDayIncome(input)).toString()
-    );
-  }
-};
-
-export const renderCalendar = () => {
-  const table = createElement("table", "table") as HTMLTableElement;
-  table.setAttribute("data-active-project", "default");
-  const caption = createElement("caption");
-  caption.textContent = currentDate.toLocaleString("en-GB", { month: "long" });
-  table.appendChild(caption);
-  const thead = createElement("thead");
-  const days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
-  days.forEach((day) => {
-    const element = createElement("th");
-    element.textContent = day;
-    thead.appendChild(element);
-  });
-  const tbodyMonths = renderMonth();
-  table.appendChild(thead);
-  table.appendChild(tbodyMonths);
-  return table;
+  const value = hours ? hours : target.value;
+  input.value = value;
+  const activeProject = getActiveProjectName();
+  input.setAttribute(`data-project-${activeProject}-hours`, value);
+  input.setAttribute(
+    `data-project-${activeProject}-income`,
+    Math.floor(calculateDayNetIncome(input)).toString()
+  );
 };

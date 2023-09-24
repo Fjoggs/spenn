@@ -5,17 +5,18 @@ import { Stats } from "./stats";
 import { getActiveProjectName } from "./util";
 
 export interface State {
-  table: Table;
+  calendarAttributes: CalendarAttributes;
   stats: Stats;
   rate: RateDetails;
   projectRow: ProjectRow;
+  filterRow: FilterRow;
 }
 
-export interface Table {
+export interface CalendarAttributes {
   dataAttributes: Array<(id: string) => string>;
 }
 
-const table: Table = {
+const calendarAttributes: CalendarAttributes = {
   dataAttributes: [
     (id: string) => `data-project-${id}-total-hours`,
     (id: string) => `data-project-${id}-income`,
@@ -81,14 +82,37 @@ const rate: RateDetails = {
     },
     {
       id: "edit-rates-input-cut",
-      label: "% cut (45% default)",
+      label: "% Cut (60% default)",
       labelId: "edit-rates-label-cut",
-      defaultRate: "45",
+      defaultRate: "60",
       dataAttribute: () => `data-project-${getActiveProjectName()}-rate-cut`,
     },
     {
+      id: "edit-rates-input-pension",
+      label: "% Pension (half paid by Noria)",
+      labelId: "edit-rates-label-pension",
+      defaultRate: "5",
+      dataAttribute: () =>
+        `data-project-${getActiveProjectName()}-rate-pension`,
+    },
+    {
+      id: "edit-rates-input-holiday",
+      label: "% Holiday pay (12% default)",
+      labelId: "edit-rates-label-holiday",
+      defaultRate: "12",
+      dataAttribute: () =>
+        `data-project-${getActiveProjectName()}-rate-holiday`,
+    },
+    {
+      id: "edit-rates-input-aga",
+      label: "% AGA (14.1% default)",
+      labelId: "edit-rates-label-cut",
+      defaultRate: "14.1",
+      dataAttribute: () => `data-project-${getActiveProjectName()}-rate-aga`,
+    },
+    {
       id: "edit-rates-input-tax",
-      label: "% tax",
+      label: "% tax (flat rate, not clever)",
       labelId: "edit-rates-label-tax",
       defaultRate: "42",
       dataAttribute: () => `data-project-${getActiveProjectName()}-rate-tax`,
@@ -104,6 +128,7 @@ const filterRow: FilterRow = {
       label: "$",
       hotkey: "m",
       dataAttribute: () => `data-project-${getActiveProjectName()}-income`,
+      filterMode: "income",
       readOnly: true,
     },
     {
@@ -111,6 +136,7 @@ const filterRow: FilterRow = {
       label: "H",
       hotkey: "h",
       dataAttribute: () => `data-project-${getActiveProjectName()}-hours`,
+      filterMode: "hours",
       readOnly: false,
       isActive: true,
     },
@@ -121,12 +147,12 @@ const projectRow: ProjectRow = {
   defaultProjectName: "Default",
   inputId: "add-project",
   inputPlaceholder: "Add new project",
-  filterRow,
 };
 
 export const defaultState: State = {
-  table,
+  calendarAttributes: calendarAttributes,
   stats,
   rate,
   projectRow,
+  filterRow,
 };

@@ -1,7 +1,8 @@
 :root {
     --main-color: rgb(30, 41, 59);
     --secondary-color: rgb(71 85 105);
-    --tertiary-color: rgb(33, 45, 65);
+    --tertiary-color: #28364e;
+    --fourth-color: rgb(43, 56, 78);
     --button-main-color: rgb(71 85 105);
     --button-secondary-color: rgb(88, 106, 131);
     --weekend-color: rgb(72, 100, 77);
@@ -80,15 +81,26 @@ details {
     margin-top: 20px;
     background-color: var(--tertiary-color);
     border-radius: 5px;
-    padding: 10px;
+    padding: 0px;   
+}
+
+details:hover {
+    background-color: var(--fourth-color);
+}
+
+summary {
+    font-weight: bold;
+    padding: 15px;
 }
 
 details ul {
+    cursor: auto;
     list-style: none;
     margin: 0;
-    padding-top: 14px;
-    padding-left: 14px;
     font-weight: 300;
+    margin-left: 14px;
+    margin-bottom: 14px;
+    padding-left: 15px;
 }
 
 details li {
@@ -99,13 +111,14 @@ details div {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    margin-top: 14px;
     margin-left: 14px;
-    max-width: 250px;
+    margin-bottom: 14px;
+    max-width: 350px;
+    padding-left: 15px;
 }
 
-summary {
-    font-weight: bold;
+details div label {
+    cursor: pointer;
 }
 
 @media (max-width: 640px) {

@@ -10,6 +10,7 @@ export type Filter = {
   label: string;
   hotkey: string;
   dataAttribute: Function;
+  filterMode: string;
   readOnly: boolean;
   isActive?: boolean;
 };
@@ -26,6 +27,7 @@ export const createFilterRow = ({ filterRowId, filters }: FilterRow) => {
       button,
       hotkey: filter.hotkey,
       dataAttribute: filter.dataAttribute,
+      filterMode: filter.filterMode,
       readOnly: filter.readOnly,
     };
   });
@@ -34,7 +36,11 @@ export const createFilterRow = ({ filterRowId, filters }: FilterRow) => {
     const key = event.key.toLocaleLowerCase();
     buttons.forEach((button) => {
       if (key === button.hotkey) {
-        activateFilter(button.dataAttribute, button.readOnly);
+        activateFilter(
+          button.dataAttribute,
+          button.readOnly,
+          button.filterMode
+        );
         setOtherFiltersInactive(filterRow);
         button.button.className = activeClassName;
       }
@@ -44,7 +50,7 @@ export const createFilterRow = ({ filterRowId, filters }: FilterRow) => {
 };
 
 const createFilterButton = (
-  { id, label, dataAttribute, readOnly, isActive }: Filter,
+  { id, label, dataAttribute, readOnly, filterMode, isActive }: Filter,
   filterRow: HTMLElement
 ) => {
   const button = createElement("button", id);
@@ -53,7 +59,7 @@ const createFilterButton = (
     button.className = activeClassName;
   }
   button.addEventListener("click", () => {
-    activateFilter(dataAttribute, readOnly);
+    activateFilter(dataAttribute, readOnly, filterMode);
     setOtherFiltersInactive(filterRow);
     button.className = activeClassName;
   });
@@ -67,7 +73,13 @@ const setOtherFiltersInactive = (buttonRow: HTMLElement) => {
   });
 };
 
-const activateFilter = (dataAttribute: Function, readOnly: boolean) => {
+const activateFilter = (
+  dataAttribute: Function,
+  readOnly: boolean,
+  filterMode: string
+) => {
+  const table = document.getElementById("table");
+  table?.setAttribute("data-active-filter", filterMode);
   const tableBody = document.getElementById("tbody");
   const weeks = tableBody?.childNodes;
   if (weeks) {

@@ -1,5 +1,7 @@
+/// <reference lib="dom" />
+
 import { renderCalendar } from "./src/calendar";
-import { startObserving } from "./src/observer";
+import { rateObserver, tableObserver } from "./src/observer";
 import { createProjectRow } from "./src/project";
 import { createEditRatesDetails } from "./src/rate";
 import { State, defaultState } from "./src/state";
@@ -11,18 +13,20 @@ const table = renderCalendar();
 
 if (app) {
   let state: State = defaultState;
-  const localStorageKey = "spenn-app-state";
+  // const localStorageKey = "spenn-app-state";
   // if (localStorage.getItem(localStorageKey)) {
   //   state = JSON.parse(localStorage.getItem(localStorageKey) || "");
   // }
   const stats = createStats(state.stats);
   const editRates = createEditRatesDetails(state.rate);
+  rateObserver(editRates);
 
   app.appendChild(table);
   const projectRow = createProjectRow(
     state.projectRow,
+    state.filterRow,
     state.rate.rateInputs,
-    state.table
+    state.calendarAttributes
   );
   app.appendChild(projectRow);
   app.appendChild(stats);
@@ -40,4 +44,4 @@ if (app) {
   // });
 }
 
-startObserving(table);
+tableObserver(table);

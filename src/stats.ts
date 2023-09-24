@@ -23,8 +23,8 @@ export const createStats = ({ statRows, statDetails }: Stats) => {
 const createStatRow = ({ id, text }: StatRow) => {
   const liElement = createElement("li");
   liElement.textContent = text;
-  const projectHours = createElement("span", id);
-  projectHours.textContent = "0";
-  liElement.appendChild(projectHours);
+  const value = createElement("span", id);
+  value.textContent = "0";
+  liElement.appendChild(value);
   return liElement;
 };
