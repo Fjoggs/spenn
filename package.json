@@ -3,14 +3,14 @@
   "module": "server.ts",
   "type": "module",
   "devDependencies": {
-    "bun-types": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+    "bun-types": "latest",
+    "cypress": "13.2.0",
+    "typescript": "5.2.2"
   },
   "scripts": {
     "start": "bun run server.ts",
     "dev": "bun --watch server.ts",
-    "bundle": "bun build ./index.ts --outfile=./build/bundle.js"
+    "bundle": "bun build ./index.ts --outfile=./build/bundle.js",
+    "cypress:open": "cypress open"
   }
 }

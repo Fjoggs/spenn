@@ -39,14 +39,22 @@ const createRateInput = ({
   const input = createElement("input", id) as HTMLInputElement;
   input.setAttribute(dataAttribute(), defaultRate);
   input.value = defaultRate;
-  input.addEventListener("change", (event) => {
-    const target = event.target as HTMLInputElement;
-    input.setAttribute(dataAttribute(), target.value);
-  });
+  input.addEventListener("change", (event) =>
+    onChangeHandler(event, input, dataAttribute)
+  );
   const inputLabel = createElement("label", labelId);
   inputLabel.textContent = label;
   inputLabel.appendChild(input);
   return inputLabel;
+};
+
+const onChangeHandler = (
+  event: Event,
+  input: HTMLInputElement,
+  dataAttribute: Function
+) => {
+  const target = event.target as HTMLInputElement;
+  input.setAttribute(dataAttribute(), target.value);
 };
 
 export const setRates = () => {

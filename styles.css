@@ -53,7 +53,7 @@ main {
     gap: 20px;
 }
 
-#toggle-view-money, #toggle-view-hours {
+#toggle-view-income, #toggle-view-hours {
     min-width: 20px;
     min-height: 20px;
 }

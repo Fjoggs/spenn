@@ -19,7 +19,7 @@ export interface CalendarAttributes {
 const calendarAttributes: CalendarAttributes = {
   dataAttributes: [
     (id: string) => `data-project-${id}-total-hours`,
-    (id: string) => `data-project-${id}-income`,
+    (id: string) => `data-project-${id}-total-income`,
   ],
 };
 
@@ -124,7 +124,7 @@ const filterRow: FilterRow = {
   filterRowId: "button-column",
   filters: [
     {
-      id: "toggle-view-money",
+      id: "toggle-view-income",
       label: "$",
       hotkey: "m",
       dataAttribute: () => `data-project-${getActiveProjectName()}-income`,

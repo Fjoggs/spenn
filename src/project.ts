@@ -100,7 +100,6 @@ const onClickProjectButton = (
   name: string,
   rates: Rate[]
 ) => {
-  console.log("hello");
   table?.setAttribute("data-active-project", id);
   button.classList.add("project-button-active");
   projectRow.childNodes.forEach((projectButton) => {

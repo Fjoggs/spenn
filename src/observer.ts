@@ -95,7 +95,7 @@ const handleAttributeChange = (
     table.getAttribute(`data-project-${activeProject}-total-hours`)
   );
   const totalProjectIncome = Number(
-    table.getAttribute(`data-project-${activeProject}-income`)
+    table.getAttribute(`data-project-${activeProject}-total-income`)
   );
   const isCalendarChangeEvent = record.attributeName === projectHoursName;
   const isProjectChangeEvent = record.attributeName === "data-active-project";
@@ -105,7 +105,8 @@ const handleAttributeChange = (
     const oldValue = Number(record.oldValue);
     setProjectCombinedHours(table, input, totalProjectHours, oldValue);
     const netIncome = calculateDayNetIncome(input, oldValue);
-    setProjectCombinedIncome(netIncome, totalProjectIncome, table);
+    setProjectIncome(netIncome, totalProjectIncome, table);
+    calculateCombinedIncome();
   } else if (isProjectChangeEvent) {
     console.log("isProjectChangeEvent");
     setActiveProject(totalProjectHours, totalProjectIncome);
@@ -219,7 +220,7 @@ const afterTax = (gross: number) => {
   return gross * (1 - tax);
 };
 
-const setProjectCombinedIncome = (
+const setProjectIncome = (
   income: number,
   totalProjectIncome: number,
   table: HTMLTableElement
@@ -229,19 +230,9 @@ const setProjectCombinedIncome = (
     const total = Math.abs(totalProjectIncome + income);
     incomeProject.textContent = formatAsCurrency(total);
     table.setAttribute(
-      `data-project-${getActiveProjectName()}-income`,
+      `data-project-${getActiveProjectName()}-total-income`,
       total.toString()
     );
-  }
-  calculateCombinedIncome(income);
-};
-
-const calculateCombinedIncome = (income: number) => {
-  const incomeCombined = document.getElementById("income-combined");
-  if (incomeCombined) {
-    const currentIncome = removeCurrencyFormat(incomeCombined.textContent);
-    const total = Math.abs(currentIncome + income);
-    incomeCombined.textContent = formatAsCurrency(total);
   }
 };
 
@@ -299,15 +290,39 @@ const onChangeRatesObserver = (records: MutationRecord[]) => {
   }
 };
 
+const calculateCombinedIncome = () => {
+  const table = document.getElementById("table") as HTMLTableElement;
+  const attributes = table.getAttributeNames();
+  let combinedIncome = 0;
+  attributes.forEach((attribute) => {
+    if (attribute.includes("-total-income")) {
+      const value = table.getAttribute(attribute);
+      if (value) {
+        console.log("value", value);
+        console.log("asNumber", Number(value));
+        combinedIncome += Number(value);
+      }
+    }
+  });
+  const combinedIncomeElement = document.getElementById("income-combined");
+  if (combinedIncomeElement) {
+    combinedIncomeElement.textContent = formatAsCurrency(combinedIncome);
+  }
+};
+
 const recalculateIncome = () => {
   const activeProject = getActiveProjectName();
-  const table = document.getElementById("table");
+  const table = document.getElementById("table") as HTMLTableElement;
   const tableBody = document.getElementById("tbody");
   const weeks = tableBody?.childNodes;
-  console.log("recalculating");
+  const projectIncome = document.getElementById("income-project");
+
+  if (projectIncome) {
+    // Reset incomes
+    table.setAttribute(`data-project-${activeProject}-total-income`, "0");
+    projectIncome.textContent = "";
+  }
   if (weeks) {
-    // reset total income
-    table?.setAttribute(`data-project-${activeProject}-income`, "0");
     const filterMode = table?.getAttribute("data-active-filter");
     weeks.forEach((week) => {
       const days = week.childNodes;
@@ -320,24 +335,30 @@ const recalculateIncome = () => {
               const hours = input.getAttribute(
                 `data-project-${activeProject}-hours`
               );
-              sum = Math.floor(calculateDayNetIncome(input, 0, Number(hours)));
+              sum = calculateDayNetIncome(input, 0, Number(hours));
             } else {
-              sum = Math.floor(calculateDayNetIncome(input));
+              sum = calculateDayNetIncome(input);
             }
             if (sum > 0) {
               input.setAttribute(
                 `data-project-${activeProject}-income`,
-                sum.toString()
+                Math.floor(sum).toString()
               );
               if (filterMode === "income") {
-                input.value = sum.toString();
+                input.value = Math.floor(sum).toString();
               }
             } else {
               input.removeAttribute(`data-project-${activeProject}-income`);
             }
+            const totalProjectIncome = Number(
+              table.getAttribute(`data-project-${activeProject}-total-income`)
+            );
+            setProjectIncome(sum, totalProjectIncome, table);
           }
         });
       }
     });
   }
+  // Recalculate combined income
+  calculateCombinedIncome();
 };
