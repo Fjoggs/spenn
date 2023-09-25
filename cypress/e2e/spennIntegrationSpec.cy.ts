@@ -111,5 +111,9 @@ describe("spenn application", () => {
     cy.get("#date-input-14").should("have.value", "199");
     cy.get("#income-project").contains("kr 225,82");
     cy.get("#income-combined").contains("kr 3 877,4");
+
+    // Changing rates for one project should not modify other projects rates
+    cy.get("#project-second-project").click();
+    cy.get("#edit-rates-input-weekday").should("have.value", "1309");
   });
 });

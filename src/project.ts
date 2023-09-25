@@ -1,7 +1,8 @@
 import { FilterRow, createFilterRow } from "./filters";
+import { formatAsCurrency } from "./observer";
 import { Rate } from "./rate";
 import { CalendarAttributes } from "./state";
-import { createElement } from "./util";
+import { createElement, getActiveProjectName } from "./util";
 
 export interface ProjectRow {
   defaultProjectName: string;
@@ -114,6 +115,7 @@ const onClickProjectButton = (
   rates.forEach((rate) => {
     setRates(rate.id, rate.dataAttribute);
   });
+  setProjectValues();
 };
 
 const setRates = (inputId: string, dataAttribute: Function) => {
@@ -122,6 +124,7 @@ const setRates = (inputId: string, dataAttribute: Function) => {
     const dataAttributeValue = input.getAttribute(dataAttribute());
     if (dataAttributeValue) {
       input.setAttribute(dataAttribute(), dataAttributeValue);
+      input.value = dataAttributeValue;
     } else {
       // Data value has not been set (new project?). Carry over value from other project
       input.setAttribute(dataAttribute(), input.value);
@@ -131,3 +134,45 @@ const setRates = (inputId: string, dataAttribute: Function) => {
 
 const removeWhiteSpace = (name: string) =>
   name.replaceAll(/\s/g, "-").toLocaleLowerCase();
+
+const setProjectValues = () => {
+  const activeProject = getActiveProjectName();
+  const table = document.getElementById("table");
+  if (table) {
+    const totalProjectHours = Number(
+      table.getAttribute(`data-project-${activeProject}-total-hours`)
+    );
+    const totalProjectIncome = Number(
+      table.getAttribute(`data-project-${activeProject}-total-income`)
+    );
+    const projectHours = document.getElementById("hours-project");
+    const projectIncome = document.getElementById("income-project");
+    if (projectHours && projectIncome) {
+      projectHours.textContent = totalProjectHours.toString();
+      projectIncome.textContent = formatAsCurrency(totalProjectIncome);
+    }
+    const activeFilter = table?.getAttribute("data-active-filter") || "hours";
+    const tableBody = document.getElementById("tbody");
+    const weeks = tableBody?.childNodes;
+    if (weeks) {
+      weeks.forEach((week) => {
+        const days = week.childNodes;
+        if (days) {
+          days.forEach((day) => {
+            if (day.firstChild) {
+              const input = day.firstChild as HTMLInputElement;
+              const value = input.getAttribute(
+                `data-project-${getActiveProjectName()}-${activeFilter}`
+              );
+              if (value) {
+                input.value = value.toString();
+              } else {
+                input.value = "";
+              }
+            }
+          });
+        }
+      });
+    }
+  }
+};

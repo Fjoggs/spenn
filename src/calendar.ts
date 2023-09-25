@@ -1,4 +1,4 @@
-import { calculateDayNetIncome } from "./observer";
+import { calculateDayIncome } from "./calculations";
 import { createElement, getActiveProjectName } from "./util";
 
 export type DayType = "weekday" | "saturday" | "sunday" | "inactive";
@@ -190,6 +190,6 @@ const setHoursAndIncome = (
   input.setAttribute(`data-project-${activeProject}-hours`, value);
   input.setAttribute(
     `data-project-${activeProject}-income`,
-    Math.floor(calculateDayNetIncome(input)).toString()
+    Math.floor(calculateDayIncome(input)).toString()
   );
 };
