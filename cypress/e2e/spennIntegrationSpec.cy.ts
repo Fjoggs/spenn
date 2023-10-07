@@ -19,27 +19,27 @@ describe("spenn application", () => {
     cy.get("#date-input-13").should("have.value", "7.5");
     cy.get("#date-input-13").type("d");
     cy.get("#date-input-13").should("have.value", "0");
-    cy.get("#date-input-14").type("f");
+    cy.get("#date-input-10").type("f");
 
     // Verify money
     cy.get("#toggle-view-income").click();
     cy.get("#date-input-12").should("have.value", "347");
     cy.get("#date-input-13").should("have.value", "0");
-    cy.get("#date-input-14").should("have.value", "2608");
+    cy.get("#date-input-10").should("have.value", "2608");
 
     // Verify filter hotkeys
     cy.document().trigger("keypress", { key: "h" });
     cy.get("#toggle-view-hours").should("have.class", "project-button-active");
     cy.get("#date-input-12").should("have.value", "1");
     cy.get("#date-input-13").should("have.value", "0");
-    cy.get("#date-input-14").should("have.value", "7.5");
+    cy.get("#date-input-10").should("have.value", "7.5");
 
     // Trigger income filter
     cy.document().trigger("keypress", { key: "m" });
     cy.get("#toggle-view-income").should("have.class", "project-button-active");
     cy.get("#date-input-12").should("have.value", "347");
     cy.get("#date-input-13").should("have.value", "0");
-    cy.get("#date-input-14").should("have.value", "2608");
+    cy.get("#date-input-10").should("have.value", "2608");
 
     // Back to hours
     cy.document().trigger("keypress", { key: "h" });
@@ -62,13 +62,13 @@ describe("spenn application", () => {
     // Verify that inputs aren't passing over from previous project
     cy.get("#date-input-12").should("have.value", "");
     cy.get("#date-input-13").should("have.value", "");
-    cy.get("#date-input-14").should("have.value", "");
+    cy.get("#date-input-10").should("have.value", "");
 
     // Check money as well
     cy.document().trigger("keypress", { key: "m" });
     cy.get("#date-input-12").should("have.value", "");
     cy.get("#date-input-13").should("have.value", "");
-    cy.get("#date-input-14").should("have.value", "");
+    cy.get("#date-input-10").should("have.value", "");
 
     // Add some data to different inputs
     cy.document().trigger("keypress", { key: "h" });
@@ -88,13 +88,13 @@ describe("spenn application", () => {
     cy.get("#toggle-view-income").click();
     cy.get("#date-input-12").should("have.value", "347");
     cy.get("#date-input-13").should("have.value", ""); // Value is reset instead of 0
-    cy.get("#date-input-14").should("have.value", "2608");
+    cy.get("#date-input-10").should("have.value", "2608");
 
     // Verify hours
     cy.get("#toggle-view-hours").click();
     cy.get("#date-input-12").should("have.value", "1");
     cy.get("#date-input-13").should("have.value", "0");
-    cy.get("#date-input-14").should("have.value", "7.5");
+    cy.get("#date-input-10").should("have.value", "7.5");
 
     // Verify stats
     cy.get("#hours-project").should("have.text", "8.5");
@@ -108,7 +108,7 @@ describe("spenn application", () => {
     cy.clearAndSetValue("#edit-rates-input-weekday", "100");
     cy.get("#edit-rates-summary").click();
     cy.get("#date-input-12").should("have.value", "26");
-    cy.get("#date-input-14").should("have.value", "199");
+    cy.get("#date-input-10").should("have.value", "199");
     cy.get("#income-project").contains("kr 225,82");
     cy.get("#income-combined").contains("kr 3 877,4");
 

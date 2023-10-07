@@ -1,4 +1,5 @@
 import { calculateDayIncome } from "./calculations";
+import { Calendar } from "./state";
 import { createElement, getActiveProjectName } from "./util";
 
 export type DayType = "weekday" | "saturday" | "sunday" | "inactive";
@@ -12,11 +13,19 @@ export enum DayTypeEnum {
 
 const currentDate = new Date();
 
-export const renderCalendar = () => {
+export type MonthState = {
+  month: number;
+  values: string[];
+};
+
+export const renderCalendar = (calendar: Calendar, monthState?: MonthState) => {
   const table = createElement("table", "table") as HTMLTableElement;
-  table.setAttribute("data-active-project", "default");
+  table.setAttribute("data-projects", "");
   const caption = createElement("caption");
-  caption.textContent = currentDate.toLocaleString("en-GB", { month: "long" });
+  caption.textContent = currentDate.toLocaleString(
+    calendar.locale,
+    calendar.dateFormat
+  );
   table.appendChild(caption);
   const thead = createElement("thead");
   const days = [
@@ -33,14 +42,15 @@ export const renderCalendar = () => {
     element.textContent = day;
     thead.appendChild(element);
   });
-  const tbodyMonths = renderMonth();
+  const tbodyMonths = renderMonth(monthState);
   table.appendChild(thead);
   table.appendChild(tbodyMonths);
   return table;
 };
 
-const renderMonth = () => {
-  const numOfDays = dateMapper[new Date().getMonth()] || 0;
+const renderMonth = (monthState?: MonthState) => {
+  const currentMonth = new Date().getMonth();
+  const numOfDays = dateMapper[currentMonth] || 0;
   const numOfWeeks = Math.ceil(numOfDays / 7);
 
   const startDayOfMonth = getStartDay();
@@ -53,9 +63,13 @@ const renderMonth = () => {
       // Render correct day 1
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         if (dayOfWeek < startDayOfMonth) {
-          row.appendChild(renderDay(0, dayOfWeek, "inactive"));
+          row.appendChild(
+            renderDay(0, dayOfWeek, currentMonth, "inactive", monthState)
+          );
         } else {
-          row.appendChild(renderDay(date, dayOfWeek));
+          row.appendChild(
+            renderDay(date, dayOfWeek, currentMonth, "active", monthState)
+          );
           date++;
         }
       }
@@ -63,16 +77,22 @@ const renderMonth = () => {
       // Render correct last day
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         if (dayOfWeek <= lastDayOfMonth) {
-          row.appendChild(renderDay(date, dayOfWeek));
+          row.appendChild(
+            renderDay(date, dayOfWeek, currentMonth, "active", monthState)
+          );
           date++;
         } else {
-          row.appendChild(renderDay(0, dayOfWeek, "inactive"));
+          row.appendChild(
+            renderDay(0, dayOfWeek, currentMonth, "inactive", monthState)
+          );
         }
       }
     } else {
       let dayOfWeek = 0;
       while (dayOfWeek < 7) {
-        row.appendChild(renderDay(date, dayOfWeek));
+        row.appendChild(
+          renderDay(date, dayOfWeek, currentMonth, "active", monthState)
+        );
         date++;
         dayOfWeek++;
       }
@@ -132,7 +152,9 @@ const dateMapper = [
 const renderDay = (
   date: number,
   dayOfWeek: number,
-  type: "active" | "inactive" = "active"
+  currentMonth: number,
+  type: "active" | "inactive" = "active",
+  monthState?: MonthState
 ) => {
   const td = createElement("td");
   const input = createElement(
@@ -142,6 +164,13 @@ const renderDay = (
   input.setAttribute("type", "text");
   input.setAttribute("placeholder", date.toString());
   input.setAttribute("data-day-type", DayTypeEnum.Weekday);
+  if (currentMonth === monthState?.month && monthState?.values[date]) {
+    input.value = monthState.values[date];
+    input.setAttribute(
+      `data-project-${getActiveProjectName()}-hours`,
+      monthState.values[date]
+    );
+  }
   input.addEventListener("keypress", (event) => {
     if (input.readOnly) {
       return;
@@ -192,4 +221,12 @@ const setHoursAndIncome = (
     `data-project-${activeProject}-income`,
     Math.floor(calculateDayIncome(input)).toString()
   );
+};
+
+const calculcateTotalHours = (hours: string[]) => {
+  let total = 0;
+  hours.forEach((hour) => {
+    total += Number(hour);
+  });
+  return total.toString();
 };

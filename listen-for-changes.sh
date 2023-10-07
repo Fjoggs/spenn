@@ -1,1 +1,1 @@
-while inotifywait -e modify src/; do bun bundle; done
+while inotifywait -e modify ./*; do bun bundle; done

@@ -14,29 +14,42 @@ export type Rate = {
   dataAttribute: Function;
 };
 
-export const createEditRatesDetails = (rate: RateDetails) => {
+export type RateState = {
+  id: string;
+  value: string;
+};
+
+export const createRateDetails = (
+  rate: RateDetails,
+  rateStates?: RateState[]
+) => {
   const editRatesDetails = createDetailsElement(rate.details);
   const container = createElement("div", rate.containerId);
   rate.rateInputs.forEach((rateInput) => {
-    container.appendChild(createRateInput(rateInput));
+    const value = rateStates?.find(
+      (rateState) => rateState.id === rateInput.id
+    )?.value;
+    container.appendChild(createRateInput(rateInput, value));
   });
   editRatesDetails.appendChild(container);
   return editRatesDetails;
 };
 
-const createRateInput = ({
-  id,
-  label,
-  labelId,
-  defaultRate,
-  dataAttribute,
-}: Rate) => {
+const createRateInput = (
+  { id, label, labelId, defaultRate, dataAttribute }: Rate,
+  value?: string
+) => {
   const input = createElement("input", id) as HTMLInputElement;
   input.setAttribute(dataAttribute(), defaultRate);
-  input.value = defaultRate;
   input.addEventListener("change", (event) =>
     onChangeHandler(event, input, dataAttribute)
   );
+  if (value) {
+    input.value = value;
+  } else {
+    input.value = defaultRate;
+  }
+
   const inputLabel = createElement("label", labelId);
   inputLabel.textContent = label;
   inputLabel.appendChild(input);
@@ -46,8 +59,13 @@ const createRateInput = ({
 const onChangeHandler = (
   event: Event,
   input: HTMLInputElement,
-  dataAttribute: Function
+  dataAttribute: Function,
+  value?: string
 ) => {
   const target = event.target as HTMLInputElement;
-  input.setAttribute(dataAttribute(), target.value);
+  if (value) {
+    input.setAttribute(dataAttribute(), value);
+  } else {
+    input.setAttribute(dataAttribute(), target.value);
+  }
 };

@@ -1,5 +1,4 @@
 import { calculateDayIncome } from "./calculations";
-import { DayTypeEnum } from "./calendar";
 import { getActiveProjectName } from "./util";
 
 enum RecordType {
@@ -162,7 +161,7 @@ const calculateCombinedValue = (attributeName: string) => {
   return combined;
 };
 
-const recalculateIncome = () => {
+export const recalculateIncome = () => {
   const activeProject = getActiveProjectName();
   const table = document.getElementById("table") as HTMLTableElement;
   const tableBody = document.getElementById("tbody");

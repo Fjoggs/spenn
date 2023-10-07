@@ -32,3 +32,23 @@ export const getActiveProjectName = () =>
     .getElementById("table")
     ?.getAttribute("data-active-project")
     ?.toLocaleLowerCase() || "default";
+
+interface CalendarState {
+  projects: Project[];
+}
+
+interface Project {
+  id: string;
+  totalHours: number;
+  totalIncome: number;
+  dayStates: CalendarDay[];
+}
+
+interface CalendarDay {}
+
+export const returnCalendarState = () => {
+  const table = document.getElementById("table");
+  const projectRow = document.getElementById("project-row");
+  const buttons = projectRow?.getElementsByTagName("button");
+  // const calendarState: CalendarState = {};
+};

@@ -1,10 +1,17 @@
+import { MonthState } from "./calendar";
 import { FilterRow } from "./filters";
 import { ProjectRow } from "./project";
-import { RateDetails } from "./rate";
+import { RateDetails, RateState } from "./rate";
 import { Stats } from "./stats";
 import { getActiveProjectName } from "./util";
 
-export interface State {
+export interface AppState {
+  guiState: GuiState;
+  state: State;
+}
+
+export interface GuiState {
+  calendar: Calendar;
   calendarAttributes: CalendarAttributes;
   stats: Stats;
   rate: RateDetails;
@@ -12,14 +19,68 @@ export interface State {
   filterRow: FilterRow;
 }
 
+export interface State {
+  monthState?: MonthState;
+  rateStates?: RateState[];
+}
+
+export interface Calendar {
+  locale: Intl.LocalesArgument;
+  dateFormat: Intl.DateTimeFormatOptions;
+}
+
 export interface CalendarAttributes {
   dataAttributes: Array<(id: string) => string>;
 }
 
+const monthState: MonthState = {
+  month: 9,
+  values: [
+    "",
+    "1",
+    "2",
+    "3",
+    "7.5",
+    "",
+    "",
+    "",
+    "5",
+    "",
+    "",
+    "",
+    "",
+    "6",
+    "",
+    "",
+    "",
+    "10",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "15",
+    "",
+    "",
+    "",
+    "17",
+    "",
+    "",
+    "",
+  ],
+};
+
+const table: Calendar = {
+  locale: "en-GB",
+  dateFormat: {
+    month: "long",
+  },
+};
+
 const calendarAttributes: CalendarAttributes = {
   dataAttributes: [
-    (id: string) => `data-project-${id}-total-hours`,
-    (id: string) => `data-project-${id}-total-income`,
+    (projectId: string) => `data-project-${projectId}-total-hours`,
+    (projectId: string) => `data-project-${projectId}-total-income`,
   ],
 };
 
@@ -120,6 +181,13 @@ const rate: RateDetails = {
   ],
 };
 
+const rateStates: RateState[] = [
+  {
+    id: "edit-rates-input-weekday",
+    value: "1400",
+  },
+];
+
 const filterRow: FilterRow = {
   filterRowId: "button-column",
   filters: [
@@ -143,16 +211,24 @@ const filterRow: FilterRow = {
   ],
 };
 
+const defaultProject = "Default";
+
 const projectRow: ProjectRow = {
-  defaultProjectName: "Default",
+  projects: [defaultProject],
   inputId: "add-project",
   inputPlaceholder: "Add new project",
 };
 
-export const defaultState: State = {
-  calendarAttributes: calendarAttributes,
+export const defaultGuiState: GuiState = {
+  calendar: table,
+  calendarAttributes,
   stats,
   rate,
   projectRow,
   filterRow,
+};
+
+export const defaultState: State = {
+  monthState,
+  rateStates,
 };

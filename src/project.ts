@@ -5,27 +5,28 @@ import { CalendarAttributes } from "./state";
 import { createElement, getActiveProjectName } from "./util";
 
 export interface ProjectRow {
-  defaultProjectName: string;
+  projects: string[];
   inputId: string;
   inputPlaceholder: string;
 }
 
 export const createProjectRow = (
-  { defaultProjectName, inputId, inputPlaceholder }: ProjectRow,
+  { projects, inputId, inputPlaceholder }: ProjectRow,
   filterRow: FilterRow,
   rates: Rate[],
   table: CalendarAttributes
 ) => {
-  let projectRow = createElement("div");
+  let projectRow = createElement("div", "project-row");
   projectRow.className = "project-row";
-  const projectButton = createProjectButton(
-    defaultProjectName,
-    projectRow,
-    rates,
-    table
-  );
-  projectButton.className = "project-button-active";
-  projectRow.appendChild(projectButton);
+  projects.forEach((project, index) => {
+    const projectButton = createNewProject(project, projectRow, rates, table);
+    if (index === 0) {
+      const table = document.getElementById("table");
+      table?.setAttribute("data-active-project", project);
+      projectButton.className = "project-button-active";
+    }
+    projectRow.appendChild(projectButton);
+  });
   const filterRowElement = createFilterRow(filterRow);
   projectRow = createAddNewProjectButton(
     inputId,
@@ -56,7 +57,7 @@ const createAddNewProjectButton = (
     const target = event.target as HTMLInputElement;
     if (target) {
       const projectName = target.value;
-      const newProjectButton = createProjectButton(
+      const newProjectButton = createNewProject(
         projectName,
         projectRow,
         rates,
@@ -74,23 +75,44 @@ const createAddNewProjectButton = (
   return projectRow;
 };
 
-const createProjectButton = (
+const createNewProject = (
   name: string,
   projectRow: HTMLElement,
   rates: Rate[],
-  table: CalendarAttributes
+  calendarAttributes: CalendarAttributes
 ) => {
-  const id = removeWhiteSpace(name);
+  const id = removeWhiteSpaceAndComma(name);
   const button = createElement("button", `project-${id}`);
-  button.textContent = name;
-  const tableElement = document.getElementById("table");
-  table.dataAttributes.forEach((dataAttribute) => {
-    tableElement?.setAttribute(dataAttribute(id), "0");
-  });
-  button.addEventListener("click", () =>
-    onClickProjectButton(tableElement, id, button, projectRow, name, rates)
-  );
-  return button;
+  const table = document.getElementById("table");
+  if (projectNameExists(id, table)) {
+    throw Error("Project name already exists");
+  } else {
+    button.textContent = name;
+    const projectsAttribute = table?.getAttribute("data-projects");
+    if (projectsAttribute) {
+      const asArray = projectsAttribute?.split(",");
+      asArray?.push(id);
+      table?.setAttribute("data-projects", asArray?.join(",") || "default,");
+    } else {
+      table?.setAttribute("data-projects", id);
+    }
+    calendarAttributes.dataAttributes.forEach((dataAttribute) => {
+      table?.setAttribute(dataAttribute(id), "0");
+    });
+    button.addEventListener("click", () =>
+      onClickProjectButton(table, id, button, projectRow, name, rates)
+    );
+    return button;
+  }
+};
+
+const projectNameExists = (name: string, table: HTMLElement | null) => {
+  const projects = table?.getAttribute("data-projects");
+  if (projects?.indexOf(name) !== -1) {
+    return true;
+  } else {
+    return false;
+  }
 };
 
 const onClickProjectButton = (
@@ -132,10 +154,38 @@ const setRates = (inputId: string, dataAttribute: Function) => {
   }
 };
 
-const removeWhiteSpace = (name: string) =>
-  name.replaceAll(/\s/g, "-").toLocaleLowerCase();
+const removeWhiteSpaceAndComma = (name: string) =>
+  name.replaceAll(/\s/g, "-").replaceAll(",", "").toLocaleLowerCase();
 
-const setProjectValues = () => {
+export const recalculateHours = () => {
+  let total = 0;
+  const tableBody = document.getElementById("tbody");
+  const weeks = tableBody?.childNodes;
+  if (weeks) {
+    weeks.forEach((week) => {
+      const days = week.childNodes;
+      if (days) {
+        days.forEach((day) => {
+          if (day.firstChild) {
+            const input = day.firstChild as HTMLInputElement;
+            const value = input.getAttribute(
+              `data-project-${getActiveProjectName()}-hours`
+            );
+
+            total += Number(value);
+          }
+        });
+      }
+    });
+  }
+  const table = document.getElementById("table");
+  table?.setAttribute(
+    `data-project-${getActiveProjectName()}-total-hours`,
+    total.toString()
+  );
+};
+
+export const setProjectValues = () => {
   const activeProject = getActiveProjectName();
   const table = document.getElementById("table");
   if (table) {
