@@ -1,4 +1,9 @@
-import { DetailsElement, createDetailsElement, createElement } from "./util";
+import {
+  DetailsElement,
+  createDetailsElement,
+  createElement,
+  getActiveProjectName,
+} from "./util";
 
 export type RateDetails = {
   details: DetailsElement;
@@ -11,7 +16,7 @@ export type Rate = {
   label: string;
   labelId: string;
   defaultRate: string;
-  dataAttribute: Function;
+  dataAttribute: string;
 };
 
 export type RateState = {
@@ -40,9 +45,13 @@ const createRateInput = (
   value?: string
 ) => {
   const input = createElement("input", id) as HTMLInputElement;
-  input.setAttribute(dataAttribute(), defaultRate);
+  const dataAttributeActiveProject = dataAttribute.replace(
+    "PROJECT_NAME",
+    getActiveProjectName()
+  );
+  input.setAttribute(dataAttributeActiveProject, defaultRate);
   input.addEventListener("change", (event) =>
-    onChangeHandler(event, input, dataAttribute)
+    onChangeHandler(event, input, dataAttributeActiveProject)
   );
   if (value) {
     input.value = value;
@@ -59,13 +68,13 @@ const createRateInput = (
 const onChangeHandler = (
   event: Event,
   input: HTMLInputElement,
-  dataAttribute: Function,
+  dataAttribute: string,
   value?: string
 ) => {
   const target = event.target as HTMLInputElement;
   if (value) {
-    input.setAttribute(dataAttribute(), value);
+    input.setAttribute(dataAttribute, value);
   } else {
-    input.setAttribute(dataAttribute(), target.value);
+    input.setAttribute(dataAttribute, target.value);
   }
 };

@@ -5,21 +5,29 @@ import { CalendarAttributes } from "./state";
 import { createElement, getActiveProjectName } from "./util";
 
 export interface ProjectRow {
-  projects: string[];
   inputId: string;
   inputPlaceholder: string;
 }
 
 export const createProjectRow = (
-  { projects, inputId, inputPlaceholder }: ProjectRow,
+  { inputId, inputPlaceholder }: ProjectRow,
   filterRow: FilterRow,
   rates: Rate[],
-  table: CalendarAttributes
+  calendarAttributes: CalendarAttributes,
+  projects?: string[]
 ) => {
   let projectRow = createElement("div", "project-row");
   projectRow.className = "project-row";
+  if (!projects) {
+    projects = ["Default"];
+  }
   projects.forEach((project, index) => {
-    const projectButton = createNewProject(project, projectRow, rates, table);
+    const projectButton = createNewProject(
+      project,
+      projectRow,
+      rates,
+      calendarAttributes
+    );
     if (index === 0) {
       const table = document.getElementById("table");
       table?.setAttribute("data-active-project", project);
@@ -28,25 +36,25 @@ export const createProjectRow = (
     projectRow.appendChild(projectButton);
   });
   const filterRowElement = createFilterRow(filterRow);
-  projectRow = createAddNewProjectButton(
+  projectRow = createAddNewProjectInput(
     inputId,
     inputPlaceholder,
     projectRow,
     filterRowElement,
     rates,
-    table
+    calendarAttributes
   );
   projectRow.appendChild(filterRowElement);
   return projectRow;
 };
 
-const createAddNewProjectButton = (
+const createAddNewProjectInput = (
   inputId: string,
   inputPlaceholder: string,
   projectRow: HTMLElement,
   filterRow: HTMLElement,
   rates: Rate[],
-  table: CalendarAttributes
+  calendarAttributes: CalendarAttributes
 ) => {
   const addNewProjectInput = createElement(
     "input",
@@ -61,7 +69,7 @@ const createAddNewProjectButton = (
         projectName,
         projectRow,
         rates,
-        table
+        calendarAttributes
       );
       addNewProjectInput.value = "";
       projectRow.removeChild(filterRow);
@@ -97,7 +105,7 @@ const createNewProject = (
       table?.setAttribute("data-projects", id);
     }
     calendarAttributes.dataAttributes.forEach((dataAttribute) => {
-      table?.setAttribute(dataAttribute(id), "0");
+      table?.setAttribute(dataAttribute.replace("PROJECT_NAME", id), "0");
     });
     button.addEventListener("click", () =>
       onClickProjectButton(table, id, button, projectRow, name, rates)
@@ -135,21 +143,24 @@ const onClickProjectButton = (
     }
   });
   rates.forEach((rate) => {
-    setRates(rate.id, rate.dataAttribute);
+    setRates(
+      rate.id,
+      rate.dataAttribute.replace("PROJECT_NAME", getActiveProjectName())
+    );
   });
   setProjectValues();
 };
 
-const setRates = (inputId: string, dataAttribute: Function) => {
+const setRates = (inputId: string, dataAttribute: string) => {
   const input = document.getElementById(inputId) as HTMLInputElement;
   if (input) {
-    const dataAttributeValue = input.getAttribute(dataAttribute());
+    const dataAttributeValue = input.getAttribute(dataAttribute);
     if (dataAttributeValue) {
-      input.setAttribute(dataAttribute(), dataAttributeValue);
+      input.setAttribute(dataAttribute, dataAttributeValue);
       input.value = dataAttributeValue;
     } else {
       // Data value has not been set (new project?). Carry over value from other project
-      input.setAttribute(dataAttribute(), input.value);
+      input.setAttribute(dataAttribute, input.value);
     }
   }
 };
@@ -183,6 +194,12 @@ export const recalculateHours = () => {
     `data-project-${getActiveProjectName()}-total-hours`,
     total.toString()
   );
+  const projectHours = document.getElementById("hours-project");
+  const combinedHours = document.getElementById("hours-combined");
+  if (projectHours && combinedHours) {
+    projectHours.textContent = total.toString();
+    combinedHours.textContent = total.toString();
+  }
 };
 
 export const setProjectValues = () => {

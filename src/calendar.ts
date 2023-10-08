@@ -1,5 +1,9 @@
 import { calculateDayIncome } from "./calculations";
-import { Calendar } from "./state";
+import { FilterRow } from "./filters";
+import { ProjectRow } from "./project";
+import { RateDetails, RateState } from "./rate";
+import { Calendar, CalendarAttributes, GuiState, State } from "./state";
+import { Stats } from "./stats";
 import { createElement, getActiveProjectName } from "./util";
 
 export type DayType = "weekday" | "saturday" | "sunday" | "inactive";
@@ -18,7 +22,11 @@ export type MonthState = {
   values: string[];
 };
 
-export const renderCalendar = (calendar: Calendar, monthState?: MonthState) => {
+export const renderCalendar = (
+  calendar: Calendar,
+  monthStates?: MonthState[]
+) => {
+  console.log("monthStates", monthStates);
   const table = createElement("table", "table") as HTMLTableElement;
   table.setAttribute("data-projects", "");
   const caption = createElement("caption");
@@ -42,18 +50,26 @@ export const renderCalendar = (calendar: Calendar, monthState?: MonthState) => {
     element.textContent = day;
     thead.appendChild(element);
   });
-  const tbodyMonths = renderMonth(monthState);
+  const tbodyMonths = renderMonth(monthStates);
   table.appendChild(thead);
   table.appendChild(tbodyMonths);
   return table;
 };
 
-const renderMonth = (monthState?: MonthState) => {
+const renderMonth = (monthStates?: MonthState[]) => {
   const currentMonth = new Date().getMonth();
+  const monthState = monthStates?.find(
+    (monthState) => currentMonth === monthState.month
+  );
   const numOfDays = dateMapper[currentMonth] || 0;
-  const numOfWeeks = Math.ceil(numOfDays / 7);
 
+  let numOfWeeks = Math.ceil(numOfDays / 7);
   const startDayOfMonth = getStartDay();
+  if (startDayOfMonth > 4 && numOfDays === 31) {
+    // 31 days month starting sat or sun needs an extra week
+    numOfWeeks = 6;
+  }
+
   const lastDayOfMonth = getLastDay();
   let date = 1;
   const tbody = createElement("tbody", "tbody");
@@ -164,13 +180,7 @@ const renderDay = (
   input.setAttribute("type", "text");
   input.setAttribute("placeholder", date.toString());
   input.setAttribute("data-day-type", DayTypeEnum.Weekday);
-  if (currentMonth === monthState?.month && monthState?.values[date]) {
-    input.value = monthState.values[date];
-    input.setAttribute(
-      `data-project-${getActiveProjectName()}-hours`,
-      monthState.values[date]
-    );
-  }
+
   input.addEventListener("keypress", (event) => {
     if (input.readOnly) {
       return;
@@ -190,18 +200,31 @@ const renderDay = (
 
   const isWeekend = dayOfWeek > 4 && type !== "inactive";
   let className = "calendar-day";
-  if (isWeekend) {
-    className = "calendar-day-weekend";
-    if (dayOfWeek === 5) {
-      input.setAttribute("data-day-type", DayTypeEnum.Saturday);
-    } else {
-      input.setAttribute("data-day-type", DayTypeEnum.Sunday);
-    }
-  } else if (type === "inactive") {
-    className = "calendar-day-inactive";
+  if (type === DayTypeEnum.Inactive) {
+    input.classList.add("inactive");
     input.setAttribute("data-day-type", DayTypeEnum.Inactive);
+    input.disabled = true;
+  } else {
+    if (currentMonth === monthState?.month && monthState?.values[date - 1]) {
+      input.value = monthState.values[date - 1];
+      input.setAttribute(
+        `data-project-${getActiveProjectName()}-hours`,
+        monthState.values[date - 1]
+      );
+    }
+    if (isWeekend) {
+      if (dayOfWeek === 5) {
+        input.setAttribute("data-day-type", DayTypeEnum.Saturday);
+      } else {
+        input.setAttribute("data-day-type", DayTypeEnum.Sunday);
+      }
+      input.classList.add("calendar-day");
+      input.classList.add("weekend");
+    } else {
+      input.classList.add(className);
+    }
   }
-  input.classList.add(className);
+
   td.appendChild(input);
 
   return td;
@@ -223,10 +246,227 @@ const setHoursAndIncome = (
   );
 };
 
-const calculcateTotalHours = (hours: string[]) => {
-  let total = 0;
-  hours.forEach((hour) => {
-    total += Number(hour);
-  });
-  return total.toString();
+export const returnCalendarState = () => {
+  const guiState = returnGuiState();
+  const state = getState();
+  return {
+    guiState,
+    state,
+  };
+};
+
+const returnGuiState = () => {
+  // Currently hardcoding to make it easier
+  const calendar = getCalendar();
+  const projectRow = document.getElementById("project-row");
+  const guiState: GuiState = {
+    calendar,
+    calendarAttributes: getCalendarAttributes(),
+    stats: getStats(),
+    filterRow: getFilterRow(),
+    projectRow: getProjectRow(),
+    rate: getRateDetails(),
+  };
+  return guiState;
+};
+
+const getCalendar = (): Calendar => {
+  const calendar = document.getElementById("table");
+  const locale = "en-GB";
+  const dateFormat: Intl.DateTimeFormatOptions = {
+    month: "long",
+  };
+  return {
+    locale,
+    dateFormat,
+  };
+};
+
+const getCalendarAttributes = (): CalendarAttributes => {
+  return {
+    dataAttributes: [
+      "data-project-PROJECT_NAME-total-hours",
+      "data-project-PROJECT_NAME-total-income",
+    ],
+  };
+};
+
+const getStats = (): Stats => {
+  return {
+    statRows: [
+      {
+        id: "hours-project",
+        text: "Hours (project): ",
+      },
+      {
+        id: "hours-combined",
+        text: "Hours (combined): ",
+      },
+      {
+        id: "income-project",
+        text: "Income (project): ",
+      },
+      {
+        id: "income-combined",
+        text: "Income (combined): ",
+      },
+    ],
+    statDetails: {
+      detailId: "stats-details",
+      summaryId: "stats-summary",
+      summaryText: "Hours / Income",
+    },
+  };
+};
+
+const getFilterRow = (): FilterRow => {
+  const filterRow: FilterRow = {
+    filterRowId: "button-column",
+    filters: [
+      {
+        id: "toggle-view-income",
+        label: "$",
+        hotkey: "m",
+        dataAttribute: "data-project-PROJECT_NAME-income",
+        filterMode: "income",
+        readOnly: true,
+      },
+      {
+        id: "toggle-view-hours",
+        label: "H",
+        hotkey: "h",
+        dataAttribute: "data-project-PROJECT_NAME-hours",
+        filterMode: "hours",
+        readOnly: false,
+        isActive: true,
+      },
+    ],
+  };
+  return filterRow;
+};
+
+const getProjectRow = (): ProjectRow => {
+  return {
+    inputId: "add-project",
+    inputPlaceholder: "Add new project",
+  };
+};
+
+const getRateDetails = (): RateDetails => {
+  const rate: RateDetails = {
+    details: {
+      detailId: "edit-rates-details",
+      summaryId: "edit-rates-summary",
+      summaryText: "Edit project rates",
+    },
+    containerId: "edit-rates-container",
+    rateInputs: [
+      {
+        id: "edit-rates-input-weekday",
+        label: "Weekday",
+        labelId: "edit-rates-label-weekday",
+        defaultRate: "1309",
+        dataAttribute: "data-project-PROJECT_NAME-rate-weekday",
+      },
+      {
+        id: "edit-rates-input-saturday",
+        label: "Saturday",
+        labelId: "edit-rates-label-saturday",
+        defaultRate: "1309",
+        dataAttribute: "data-project-PROJECT_NAME-rate-saturday",
+      },
+      {
+        id: "edit-rates-input-sunday",
+        label: "Sunday",
+        labelId: "edit-rates-label-sunday",
+        defaultRate: "1309",
+        dataAttribute: "data-project-PROJECT_NAME-rate-sunday",
+      },
+      {
+        id: "edit-rates-input-cut",
+        label: "% Cut (60% default)",
+        labelId: "edit-rates-label-cut",
+        defaultRate: "60",
+        dataAttribute: "data-project-PROJECT_NAME-rate-cut",
+      },
+      {
+        id: "edit-rates-input-pension",
+        label: "% Pension (half paid by Noria)",
+        labelId: "edit-rates-label-pension",
+        defaultRate: "5",
+        dataAttribute: "data-project-PROJECT_NAME-rate-pension",
+      },
+      {
+        id: "edit-rates-input-holiday",
+        label: "% Holiday pay (12% default)",
+        labelId: "edit-rates-label-holiday",
+        defaultRate: "12",
+        dataAttribute: "data-project-PROJECT_NAME-rate-holiday",
+      },
+      {
+        id: "edit-rates-input-aga",
+        label: "% AGA (14.1% default)",
+        labelId: "edit-rates-label-cut",
+        defaultRate: "14.1",
+        dataAttribute: "data-project-PROJECT_NAME-rate-aga",
+      },
+      {
+        id: "edit-rates-input-tax",
+        label: "% tax (flat rate, not clever)",
+        labelId: "edit-rates-label-tax",
+        defaultRate: "42",
+        dataAttribute: "data-project-PROJECT_NAME-rate-tax",
+      },
+    ],
+  };
+  return rate;
+};
+
+const getState = (): State => {
+  const defaultProject = "Default";
+  const projects = [defaultProject];
+  const rateStates: RateState[] = getRates();
+  const monthStates = getMonthState();
+
+  return {
+    monthStates,
+    projects,
+    rateStates,
+  };
+};
+
+const getRates = (): RateState[] | [] => {
+  const rateContainer = document.getElementById("edit-rates-container");
+  let rateState: RateState[] = [];
+  if (rateContainer) {
+    rateContainer.childNodes.forEach((element) => {
+      if (element.lastChild) {
+        const input = element.lastChild as HTMLInputElement;
+        rateState.push({
+          id: input.id,
+          value: input.value,
+        });
+      }
+    });
+  }
+  return rateState;
+};
+
+const getMonthState = (): MonthState[] => {
+  const values: string[] = [];
+  const monthState: MonthState = {
+    month: new Date().getMonth(),
+    values,
+  };
+
+  const days = document.querySelectorAll("input.calendar-day");
+  if (days) {
+    days.forEach((day) => {
+      const value = day.getAttribute(
+        `data-project-${getActiveProjectName()}-hours`
+      );
+      values.push(value || "");
+    });
+  }
+  return [monthState];
 };

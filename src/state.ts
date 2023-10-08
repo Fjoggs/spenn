@@ -6,8 +6,8 @@ import { Stats } from "./stats";
 import { getActiveProjectName } from "./util";
 
 export interface AppState {
-  guiState: GuiState;
-  state: State;
+  guiState?: GuiState;
+  state?: State;
 }
 
 export interface GuiState {
@@ -20,7 +20,8 @@ export interface GuiState {
 }
 
 export interface State {
-  monthState?: MonthState;
+  projects?: string[];
+  monthStates?: MonthState[];
   rateStates?: RateState[];
 }
 
@@ -30,47 +31,10 @@ export interface Calendar {
 }
 
 export interface CalendarAttributes {
-  dataAttributes: Array<(id: string) => string>;
+  dataAttributes: string[];
 }
 
-const monthState: MonthState = {
-  month: 9,
-  values: [
-    "",
-    "1",
-    "2",
-    "3",
-    "7.5",
-    "",
-    "",
-    "",
-    "5",
-    "",
-    "",
-    "",
-    "",
-    "6",
-    "",
-    "",
-    "",
-    "10",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "15",
-    "",
-    "",
-    "",
-    "17",
-    "",
-    "",
-    "",
-  ],
-};
-
-const table: Calendar = {
+const calendar: Calendar = {
   locale: "en-GB",
   dateFormat: {
     month: "long",
@@ -79,8 +43,8 @@ const table: Calendar = {
 
 const calendarAttributes: CalendarAttributes = {
   dataAttributes: [
-    (projectId: string) => `data-project-${projectId}-total-hours`,
-    (projectId: string) => `data-project-${projectId}-total-income`,
+    "data-project-PROJECT_NAME-total-hours",
+    "data-project-PROJECT_NAME-total-income",
   ],
 };
 
@@ -123,60 +87,56 @@ const rate: RateDetails = {
       label: "Weekday",
       labelId: "edit-rates-label-weekday",
       defaultRate: "1309",
-      dataAttribute: () =>
-        `data-project-${getActiveProjectName()}-rate-weekday`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-weekday",
     },
     {
       id: "edit-rates-input-saturday",
       label: "Saturday",
       labelId: "edit-rates-label-saturday",
       defaultRate: "1309",
-      dataAttribute: () =>
-        `data-project-${getActiveProjectName()}-rate-saturday`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-saturday",
     },
     {
       id: "edit-rates-input-sunday",
       label: "Sunday",
       labelId: "edit-rates-label-sunday",
       defaultRate: "1309",
-      dataAttribute: () => `data-project-${getActiveProjectName()}-rate-sunday`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-sunday",
     },
     {
       id: "edit-rates-input-cut",
       label: "% Cut (60% default)",
       labelId: "edit-rates-label-cut",
       defaultRate: "60",
-      dataAttribute: () => `data-project-${getActiveProjectName()}-rate-cut`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-cut",
     },
     {
       id: "edit-rates-input-pension",
       label: "% Pension (half paid by Noria)",
       labelId: "edit-rates-label-pension",
       defaultRate: "5",
-      dataAttribute: () =>
-        `data-project-${getActiveProjectName()}-rate-pension`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-pension",
     },
     {
       id: "edit-rates-input-holiday",
       label: "% Holiday pay (12% default)",
       labelId: "edit-rates-label-holiday",
       defaultRate: "12",
-      dataAttribute: () =>
-        `data-project-${getActiveProjectName()}-rate-holiday`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-holiday",
     },
     {
       id: "edit-rates-input-aga",
       label: "% AGA (14.1% default)",
       labelId: "edit-rates-label-cut",
       defaultRate: "14.1",
-      dataAttribute: () => `data-project-${getActiveProjectName()}-rate-aga`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-aga",
     },
     {
       id: "edit-rates-input-tax",
       label: "% tax (flat rate, not clever)",
       labelId: "edit-rates-label-tax",
       defaultRate: "42",
-      dataAttribute: () => `data-project-${getActiveProjectName()}-rate-tax`,
+      dataAttribute: "data-project-PROJECT_NAME-rate-tax",
     },
   ],
 };
@@ -195,7 +155,7 @@ const filterRow: FilterRow = {
       id: "toggle-view-income",
       label: "$",
       hotkey: "m",
-      dataAttribute: () => `data-project-${getActiveProjectName()}-income`,
+      dataAttribute: "data-project-PROJECT_NAME-income",
       filterMode: "income",
       readOnly: true,
     },
@@ -203,7 +163,7 @@ const filterRow: FilterRow = {
       id: "toggle-view-hours",
       label: "H",
       hotkey: "h",
-      dataAttribute: () => `data-project-${getActiveProjectName()}-hours`,
+      dataAttribute: "data-project-PROJECT_NAME-hours",
       filterMode: "hours",
       readOnly: false,
       isActive: true,
@@ -212,15 +172,15 @@ const filterRow: FilterRow = {
 };
 
 const defaultProject = "Default";
+const projects = [defaultProject];
 
 const projectRow: ProjectRow = {
-  projects: [defaultProject],
   inputId: "add-project",
   inputPlaceholder: "Add new project",
 };
 
 export const defaultGuiState: GuiState = {
-  calendar: table,
+  calendar,
   calendarAttributes,
   stats,
   rate,
@@ -229,6 +189,6 @@ export const defaultGuiState: GuiState = {
 };
 
 export const defaultState: State = {
-  monthState,
+  projects,
   rateStates,
 };

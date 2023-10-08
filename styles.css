@@ -217,16 +217,16 @@ th {
     opacity: 0.5;
 }
 
-.calendar-day-inactive {
+.inactive {
     background-color: var(--main-color)
 }
 
-.calendar-day-inactive:read-only {
+.inactive:read-only {
     background-color: var(--main-color);
     border-left: 0;
 }
 
-.calendar-day-inactive::placeholder {
+.inactive::placeholder {
     color: var(--main-color);
     
 }
@@ -235,7 +235,7 @@ th {
     background-color: var(--secondary-color);
 }
 
-.calendar-day-weekend {
+.calendar-day.weekend {
     background-color: var(--weekend-color);
 }
 

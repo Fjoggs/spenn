@@ -1,4 +1,4 @@
-import { createElement } from "./util";
+import { createElement, getActiveProjectName } from "./util";
 
 export type FilterRow = {
   filterRowId: string;
@@ -9,7 +9,7 @@ export type Filter = {
   id: string;
   label: string;
   hotkey: string;
-  dataAttribute: Function;
+  dataAttribute: string;
   filterMode: string;
   readOnly: boolean;
   isActive?: boolean;
@@ -74,7 +74,7 @@ const setOtherFiltersInactive = (buttonRow: HTMLElement) => {
 };
 
 const activateFilter = (
-  dataAttribute: Function,
+  dataAttribute: string,
   readOnly: boolean,
   filterMode: string
 ) => {
@@ -89,7 +89,9 @@ const activateFilter = (
         days.forEach((day) => {
           if (day.firstChild) {
             const input = day.firstChild as HTMLInputElement;
-            const value = input.getAttribute(dataAttribute());
+            const value = input.getAttribute(
+              dataAttribute.replace("PROJECT_NAME", getActiveProjectName())
+            );
             input.readOnly = readOnly;
             if (value) {
               input.value = value.toString();

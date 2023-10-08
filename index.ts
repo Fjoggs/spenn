@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-import { renderCalendar } from "./src/calendar";
+import { renderCalendar, returnCalendarState } from "./src/calendar";
 import { rateObserver, recalculateIncome, tableObserver } from "./src/observer";
 import { createProjectRow, recalculateHours } from "./src/project";
 import { createRateDetails } from "./src/rate";
@@ -12,7 +12,7 @@ import {
   defaultState,
 } from "./src/state";
 import { createStats } from "./src/stats";
-import { returnCalendarState } from "./src/util";
+import { createElement } from "./src/util";
 
 const app = document.getElementById("app");
 
@@ -21,17 +21,17 @@ let state: State = {};
 let appState: AppState;
 const localStorageKey = "spenn-app-state";
 if (localStorage.getItem(localStorageKey)) {
-  console.log("setting state = defaultState");
   appState = JSON.parse(localStorage.getItem(localStorageKey) || "");
-  // if (appState.guiState) {
-  // guiState = appState.guiState
-  // }
-  // if (appState.state) {
-  // state = appState.state;
-  // }
-  state = defaultState;
+  if (appState.guiState) {
+    guiState = appState.guiState;
+  }
+  if (appState.state) {
+    state = appState.state;
+  } else {
+    state = defaultState;
+  }
 }
-const calendar = renderCalendar(guiState.calendar, state?.monthState);
+const calendar = renderCalendar(guiState.calendar, state?.monthStates);
 
 if (app) {
   try {
@@ -44,16 +44,16 @@ if (app) {
       guiState.projectRow,
       guiState.filterRow,
       guiState.rate.rateInputs,
-      guiState.calendarAttributes
+      guiState.calendarAttributes,
+      state.projects
     );
     app.appendChild(projectRow);
     app.appendChild(stats);
     app.appendChild(editRates);
 
     const appObserver = new MutationObserver(() => {
-      console.log("storing in storage");
-      returnCalendarState();
-      localStorage.setItem(localStorageKey, JSON.stringify(defaultGuiState));
+      const currentState = returnCalendarState();
+      localStorage.setItem(localStorageKey, JSON.stringify(currentState));
     });
     appObserver.observe(app, {
       attributes: true,
@@ -63,6 +63,12 @@ if (app) {
     });
     recalculateHours();
     recalculateIncome();
+    const button = createElement("button");
+    button.textContent = "Clear storage";
+    button.addEventListener("click", () => {
+      localStorage.removeItem(localStorageKey);
+    });
+    app.appendChild(button);
   } catch (error) {
     console.log("error", error);
   }
