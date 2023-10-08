@@ -1,9 +1,5 @@
-import {
-  DetailsElement,
-  createDetailsElement,
-  createElement,
-  getActiveProjectName,
-} from "./util";
+import { getActiveProjectName } from "./project";
+import { DetailsElement, createDetailsElement, createElement } from "./util";
 
 export type RateDetails = {
   details: DetailsElement;

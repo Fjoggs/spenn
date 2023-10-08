@@ -1,6 +1,6 @@
 describe("spenn application", () => {
-  it("can edit hours and calculate the correct amount of income", () => {
-    cy.visit("localhost:3000");
+  it("can edit hours, rates and calculate the correct amount of income", () => {
+    cy.visit("/");
 
     cy.get("#edit-rates-summary").click();
     cy.clearAndSetValue("#edit-rates-input-weekday", "1309");

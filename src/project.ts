@@ -2,7 +2,7 @@ import { FilterRow, createFilterRow } from "./filters";
 import { formatAsCurrency } from "./observer";
 import { Rate } from "./rate";
 import { CalendarAttributes } from "./state";
-import { createElement, getActiveProjectName } from "./util";
+import { createElement } from "./util";
 
 export interface ProjectRow {
   inputId: string;
@@ -243,3 +243,9 @@ export const setProjectValues = () => {
     }
   }
 };
+
+export const getActiveProjectName = () =>
+  document
+    .getElementById("table")
+    ?.getAttribute("data-active-project")
+    ?.toLocaleLowerCase() || "default";

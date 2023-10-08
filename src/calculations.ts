@@ -1,5 +1,5 @@
 import { DayTypeEnum } from "./calendar";
-import { getActiveProjectName } from "./util";
+import { getActiveProjectName } from "./project";
 
 export const calculateDayIncome = (
   inputElement: HTMLInputElement,

@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-import { renderCalendar, returnCalendarState } from "./src/calendar";
+import { renderCalendar } from "./src/calendar";
 import { rateObserver, recalculateIncome, tableObserver } from "./src/observer";
 import { createProjectRow, recalculateHours } from "./src/project";
 import { createRateDetails } from "./src/rate";
@@ -10,6 +10,7 @@ import {
   State,
   defaultGuiState,
   defaultState,
+  returnCalendarState,
 } from "./src/state";
 import { createStats } from "./src/stats";
 import { createElement } from "./src/util";
@@ -20,6 +21,7 @@ let guiState: GuiState = defaultGuiState;
 let state: State = {};
 let appState: AppState;
 const localStorageKey = "spenn-app-state";
+
 if (localStorage.getItem(localStorageKey)) {
   appState = JSON.parse(localStorage.getItem(localStorageKey) || "");
   if (appState.guiState) {
@@ -53,6 +55,7 @@ if (app) {
 
     const appObserver = new MutationObserver(() => {
       const currentState = returnCalendarState();
+      console.log("storing in storage");
       localStorage.setItem(localStorageKey, JSON.stringify(currentState));
     });
     appObserver.observe(app, {

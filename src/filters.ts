@@ -1,4 +1,5 @@
-import { createElement, getActiveProjectName } from "./util";
+import { getActiveProjectName } from "./project";
+import { createElement } from "./util";
 
 export type FilterRow = {
   filterRowId: string;

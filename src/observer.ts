@@ -1,5 +1,5 @@
 import { calculateDayIncome } from "./calculations";
-import { getActiveProjectName } from "./util";
+import { getActiveProjectName } from "./project";
 
 enum RecordType {
   AttributeChange = "attributes",
