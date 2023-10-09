@@ -115,5 +115,12 @@ describe("spenn application", () => {
     // Changing rates for one project should not modify other projects rates
     cy.get("#project-second-project").click();
     cy.get("#edit-rates-input-weekday").should("have.value", "1309");
+
+    // Modifying rates for second project does not modify first project
+    cy.get("#edit-rates-summary").click();
+    cy.clearAndSetValue("#edit-rates-input-weekday", "1337");
+    cy.get("#edit-rates-input-weekday").should("have.value", "1337");
+    cy.get("#project-default").click();
+    cy.get("#edit-rates-input-weekday").should("have.value", "100");
   });
 });

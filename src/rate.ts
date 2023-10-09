@@ -1,4 +1,5 @@
 import { getActiveProjectName } from "./project";
+import { ProjectState } from "./state";
 import { DetailsElement, createDetailsElement, createElement } from "./util";
 
 export type RateDetails = {
@@ -45,14 +46,15 @@ const createRateInput = (
     "PROJECT_NAME",
     getActiveProjectName()
   );
-  input.setAttribute(dataAttributeActiveProject, defaultRate);
   input.addEventListener("change", (event) =>
-    onChangeHandler(event, input, dataAttributeActiveProject)
+    onChangeHandler(event, input, dataAttribute)
   );
   if (value) {
     input.value = value;
+    input.setAttribute(dataAttributeActiveProject, value);
   } else {
     input.value = defaultRate;
+    input.setAttribute(dataAttributeActiveProject, defaultRate);
   }
 
   const inputLabel = createElement("label", labelId);
@@ -67,10 +69,43 @@ const onChangeHandler = (
   dataAttribute: string,
   value?: string
 ) => {
+  const dataAttributeActiveProject = dataAttribute.replace(
+    "PROJECT_NAME",
+    getActiveProjectName()
+  );
   const target = event.target as HTMLInputElement;
   if (value) {
-    input.setAttribute(dataAttribute, value);
+    input.setAttribute(dataAttributeActiveProject, value);
   } else {
-    input.setAttribute(dataAttribute, target.value);
+    input.setAttribute(dataAttributeActiveProject, target.value);
+  }
+};
+
+export const setRateAttributes = (projects?: ProjectState[]) => {
+  if (projects) {
+    projects.forEach((project) => {
+      if (project.rateStates) {
+        project.rateStates.forEach((rateState) => {
+          const input = document.getElementById(rateState.id);
+          setRateAttributeValue(rateState, project, input);
+        });
+      }
+    });
+  }
+};
+
+const setRateAttributeValue = (
+  rateState: RateState,
+  project: ProjectState,
+  input: HTMLElement | null
+) => {
+  if (input) {
+    const rateId = input.id.replace("edit-rates-input-", "");
+    if (rateState.value) {
+      input.setAttribute(
+        `data-project-${project.name}-rate-${rateId}`,
+        rateState.value
+      );
+    }
   }
 };

@@ -2,8 +2,12 @@
 
 import { renderCalendar } from "./src/calendar";
 import { rateObserver, recalculateIncome, tableObserver } from "./src/observer";
-import { createProjectRow, recalculateHours } from "./src/project";
-import { createRateDetails } from "./src/rate";
+import {
+  createProjectRow,
+  getActiveProjectName,
+  setHours,
+} from "./src/project";
+import { createRateDetails, setRateAttributes } from "./src/rate";
 import {
   AppState,
   GuiState,
@@ -33,12 +37,25 @@ if (localStorage.getItem(localStorageKey)) {
     state = defaultState;
   }
 }
-const calendar = renderCalendar(guiState.calendar, state?.monthStates);
+
+const activeProjectState = state.projects?.find(
+  (project) => project.name === getActiveProjectName()
+);
+
+const calendar = renderCalendar(
+  guiState.calendar,
+  activeProjectState?.monthStates
+);
 
 if (app) {
   try {
     const stats = createStats(guiState.stats);
-    const editRates = createRateDetails(guiState.rate, state?.rateStates);
+    console.log("project", activeProjectState);
+    const editRates = createRateDetails(
+      guiState.rate,
+      activeProjectState?.rateStates
+    );
+
     rateObserver(editRates);
 
     app.appendChild(calendar);
@@ -53,6 +70,9 @@ if (app) {
     app.appendChild(stats);
     app.appendChild(editRates);
 
+    setRateAttributes(state.projects);
+    setHours(state.projects);
+
     const appObserver = new MutationObserver(() => {
       const currentState = returnCalendarState();
       console.log("storing in storage");
@@ -64,7 +84,6 @@ if (app) {
       subtree: true,
       attributeOldValue: true,
     });
-    recalculateHours();
     recalculateIncome();
     const button = createElement("button");
     button.textContent = "Clear storage";

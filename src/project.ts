@@ -1,7 +1,8 @@
+import { MonthState } from "./calendar";
 import { FilterRow, createFilterRow } from "./filters";
 import { formatAsCurrency } from "./observer";
 import { Rate } from "./rate";
-import { CalendarAttributes } from "./state";
+import { CalendarAttributes, ProjectState } from "./state";
 import { createElement } from "./util";
 
 export interface ProjectRow {
@@ -14,23 +15,27 @@ export const createProjectRow = (
   filterRow: FilterRow,
   rates: Rate[],
   calendarAttributes: CalendarAttributes,
-  projects?: string[]
+  projects?: ProjectState[]
 ) => {
   let projectRow = createElement("div", "project-row");
   projectRow.className = "project-row";
   if (!projects) {
-    projects = ["Default"];
+    projects = [
+      {
+        name: "Default",
+      },
+    ];
   }
   projects.forEach((project, index) => {
     const projectButton = createNewProject(
-      project,
+      project.name,
       projectRow,
       rates,
       calendarAttributes
     );
     if (index === 0) {
       const table = document.getElementById("table");
-      table?.setAttribute("data-active-project", project);
+      table?.setAttribute("data-active-project", project.name);
       projectButton.className = "project-button-active";
     }
     projectRow.appendChild(projectButton);
@@ -96,11 +101,13 @@ const createNewProject = (
     throw Error("Project name already exists");
   } else {
     button.textContent = name;
-    const projectsAttribute = table?.getAttribute("data-projects");
-    if (projectsAttribute) {
-      const asArray = projectsAttribute?.split(",");
-      asArray?.push(id);
-      table?.setAttribute("data-projects", asArray?.join(",") || "default,");
+    const projectsArray = getProjectsArray();
+    if (projectsArray) {
+      projectsArray?.push(id);
+      table?.setAttribute(
+        "data-projects",
+        projectsArray?.join(",") || "Default,"
+      );
     } else {
       table?.setAttribute("data-projects", id);
     }
@@ -112,6 +119,15 @@ const createNewProject = (
     );
     return button;
   }
+};
+
+export const getProjectsArray = () => {
+  const table = document.getElementById("table");
+  const projectsAttribute = table?.getAttribute("data-projects");
+  if (projectsAttribute) {
+    return projectsAttribute?.split(",");
+  }
+  return [];
 };
 
 const projectNameExists = (name: string, table: HTMLElement | null) => {
@@ -168,40 +184,6 @@ const setRates = (inputId: string, dataAttribute: string) => {
 const removeWhiteSpaceAndComma = (name: string) =>
   name.replaceAll(/\s/g, "-").replaceAll(",", "").toLocaleLowerCase();
 
-export const recalculateHours = () => {
-  let total = 0;
-  const tableBody = document.getElementById("tbody");
-  const weeks = tableBody?.childNodes;
-  if (weeks) {
-    weeks.forEach((week) => {
-      const days = week.childNodes;
-      if (days) {
-        days.forEach((day) => {
-          if (day.firstChild) {
-            const input = day.firstChild as HTMLInputElement;
-            const value = input.getAttribute(
-              `data-project-${getActiveProjectName()}-hours`
-            );
-
-            total += Number(value);
-          }
-        });
-      }
-    });
-  }
-  const table = document.getElementById("table");
-  table?.setAttribute(
-    `data-project-${getActiveProjectName()}-total-hours`,
-    total.toString()
-  );
-  const projectHours = document.getElementById("hours-project");
-  const combinedHours = document.getElementById("hours-combined");
-  if (projectHours && combinedHours) {
-    projectHours.textContent = total.toString();
-    combinedHours.textContent = total.toString();
-  }
-};
-
 export const setProjectValues = () => {
   const activeProject = getActiveProjectName();
   const table = document.getElementById("table");
@@ -242,6 +224,50 @@ export const setProjectValues = () => {
       });
     }
   }
+};
+
+export const setHours = (projects?: ProjectState[]) => {
+  // Loop through projects and set all hour attributes
+  let total = 0;
+  if (projects) {
+    projects.forEach((project) => {
+      if (project.monthStates) {
+        project.monthStates.forEach((monthState) => {
+          total += setHoursForProject(monthState, project.name);
+        });
+      }
+    });
+  }
+
+  const combined = document.getElementById("hours-combined");
+  if (combined) {
+    combined.textContent = total.toString();
+  }
+};
+
+const setHoursForProject = (monthState: MonthState, projectName: string) => {
+  let total = 0;
+  monthState.values.forEach((value, index) => {
+    const input = document.getElementById(`date-input-${index + 1}`);
+    if (input) {
+      input.setAttribute(`data-project-${projectName}-hours`, value);
+      total += Number(value);
+    }
+  });
+  const table = document.getElementById("table");
+  if (table) {
+    table.setAttribute(
+      `data-project-${projectName}-total-hours`,
+      total.toString()
+    );
+    if (projectName === getActiveProjectName()) {
+      const projectHours = document.getElementById("hours-project");
+      if (projectHours) {
+        projectHours.textContent = total.toString();
+      }
+    }
+  }
+  return total;
 };
 
 export const getActiveProjectName = () =>

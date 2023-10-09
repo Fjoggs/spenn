@@ -1,6 +1,6 @@
 import { MonthState } from "./calendar";
 import { FilterRow } from "./filters";
-import { ProjectRow, getActiveProjectName } from "./project";
+import { ProjectRow, getActiveProjectName, getProjectsArray } from "./project";
 import { RateDetails, RateState } from "./rate";
 import { Stats } from "./stats";
 
@@ -19,7 +19,11 @@ export interface GuiState {
 }
 
 export interface State {
-  projects?: string[];
+  projects?: ProjectState[];
+}
+
+export interface ProjectState {
+  name: string;
   monthStates?: MonthState[];
   rateStates?: RateState[];
 }
@@ -170,9 +174,6 @@ const filterRow: FilterRow = {
   ],
 };
 
-const defaultProject = "Default";
-const projects = [defaultProject];
-
 const projectRow: ProjectRow = {
   inputId: "add-project",
   inputPlaceholder: "Add new project",
@@ -188,8 +189,12 @@ export const defaultGuiState: GuiState = {
 };
 
 export const defaultState: State = {
-  projects,
-  rateStates,
+  projects: [
+    {
+      name: "Default",
+      rateStates,
+    },
+  ],
 };
 
 export const returnCalendarState = () => {
@@ -358,29 +363,37 @@ const getRateDetails = (): RateDetails => {
   return rate;
 };
 
-const getState = (): State => {
-  const defaultProject = "Default";
-  const projects = [defaultProject];
-  const rateStates: RateState[] = getRates();
-  const monthStates = getMonthState();
+const getState = (): State => ({
+  projects: getProjects(),
+});
 
-  return {
-    monthStates,
-    projects,
-    rateStates,
-  };
+const getProjects = (): ProjectState[] => {
+  let projects: ProjectState[] = [];
+  const projectsArray = getProjectsArray();
+  projectsArray.forEach((projectName) => {
+    const project: ProjectState = {
+      name: projectName,
+      monthStates: getMonthState(projectName),
+      rateStates: getRates(projectName),
+    };
+    projects.push(project);
+  });
+  return projects;
 };
 
-const getRates = (): RateState[] | [] => {
+const getRates = (projectName: string): RateState[] | [] => {
   const rateContainer = document.getElementById("edit-rates-container");
   let rateState: RateState[] = [];
   if (rateContainer) {
     rateContainer.childNodes.forEach((element) => {
       if (element.lastChild) {
         const input = element.lastChild as HTMLInputElement;
+        const rateId = input.id.replace("edit-rates-input-", "");
         rateState.push({
           id: input.id,
-          value: input.value,
+          value:
+            input.getAttribute(`data-project-${projectName}-rate-${rateId}`) ||
+            "",
         });
       }
     });
@@ -388,7 +401,7 @@ const getRates = (): RateState[] | [] => {
   return rateState;
 };
 
-const getMonthState = (): MonthState[] => {
+const getMonthState = (projectName: string): MonthState[] => {
   const values: string[] = [];
   const monthState: MonthState = {
     month: new Date().getMonth(),
@@ -398,9 +411,7 @@ const getMonthState = (): MonthState[] => {
   const days = document.querySelectorAll("input.calendar-day");
   if (days) {
     days.forEach((day) => {
-      const value = day.getAttribute(
-        `data-project-${getActiveProjectName()}-hours`
-      );
+      const value = day.getAttribute(`data-project-${projectName}-hours`);
       values.push(value || "");
     });
   }
