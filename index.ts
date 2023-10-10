@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 
 import { renderCalendar } from "./src/calendar";
+import { GuiState, defaultGuiState } from "./src/guiState";
 import { rateObserver, recalculateIncome, tableObserver } from "./src/observer";
 import {
   createProjectRow,
@@ -10,9 +11,7 @@ import {
 import { createRateDetails, setRateAttributes } from "./src/rate";
 import {
   AppState,
-  GuiState,
   State,
-  defaultGuiState,
   defaultState,
   returnCalendarState,
 } from "./src/state";
@@ -50,7 +49,6 @@ const calendar = renderCalendar(
 if (app) {
   try {
     const stats = createStats(guiState.stats);
-    console.log("project", activeProjectState);
     const editRates = createRateDetails(
       guiState.rate,
       activeProjectState?.rateStates

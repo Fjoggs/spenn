@@ -3,6 +3,7 @@
   "module": "server.ts",
   "type": "module",
   "devDependencies": {
+    "@happy-dom/global-registrator": "^12.9.1",
     "bun-types": "latest",
     "cypress": "13.2.0",
     "typescript": "5.2.2"
