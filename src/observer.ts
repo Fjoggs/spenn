@@ -1,10 +1,10 @@
 import { calculateDayIncome } from "./calculations";
 import { getActiveProjectName } from "./project";
 
-enum RecordType {
-  AttributeChange = "attributes",
-  ChildAddRemove = "childList",
-}
+export const RecordType = {
+  AttributeChange: "attributes",
+  ChildAddRemove: "childList",
+};
 
 const oberserverConfig: MutationObserverInit = {
   attributes: true,

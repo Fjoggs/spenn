@@ -172,3 +172,9 @@ dist
 # build folder
 
 build/
+
+
+# db
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

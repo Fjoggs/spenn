@@ -2,61 +2,79 @@
 
 import { renderCalendar } from "./src/calendar";
 import { GuiState, defaultGuiState } from "./src/guiState";
-import { rateObserver, recalculateIncome, tableObserver } from "./src/observer";
+import { login } from "./src/login";
+import {
+  RecordType,
+  rateObserver,
+  recalculateIncome,
+  tableObserver,
+} from "./src/observer";
 import {
   createProjectRow,
   getActiveProjectName,
   setHours,
 } from "./src/project";
 import { createRateDetails, setRateAttributes } from "./src/rate";
-import {
-  AppState,
-  State,
-  defaultState,
-  returnCalendarState,
-} from "./src/state";
+import { AppState, State, returnCalendarState } from "./src/state";
 import { createStats } from "./src/stats";
-import { createElement } from "./src/util";
 
-const app = document.getElementById("app");
+const appContainer = document.getElementById("app") as HTMLDivElement;
 
 let guiState: GuiState = defaultGuiState;
 let state: State = {};
-let appState: AppState;
-const localStorageKey = "spenn-app-state";
 
-if (localStorage.getItem(localStorageKey)) {
-  appState = JSON.parse(localStorage.getItem(localStorageKey) || "");
-  if (appState.guiState) {
-    guiState = appState.guiState;
+const fetchState = async () => {
+  const response = await fetch("/api/get?user=fjogen");
+  const appState = (await response.json()) as AppState;
+  console.log("appStae", appState);
+  if (appState) {
+    if (appState.guiState) {
+      console.log("guiState", appState.guiState);
+      guiState = appState.guiState;
+    }
+    if (appState.state) {
+      console.log("state", appState.state);
+      state = appState.state;
+    }
   }
-  if (appState.state) {
-    state = appState.state;
-  } else {
-    state = defaultState;
+};
+
+const activeProjectState = () =>
+  state.projects?.find((project) => {
+    return project.name === getActiveProjectName();
+  });
+
+const isTotalChange = (attributeName: string | null) => {
+  if (attributeName === `data-project-${getActiveProjectName()}-total-income`) {
+    return true;
+  } else if (
+    attributeName === `data-project-${getActiveProjectName()}-total-hours`
+  ) {
+    return true;
   }
-}
+  return false;
+};
 
-const activeProjectState = state.projects?.find(
-  (project) => project.name === getActiveProjectName()
-);
+const renderApp = async (appContainer: HTMLDivElement) => {
+  await fetchState();
 
-const calendar = renderCalendar(
-  guiState.calendar,
-  activeProjectState?.monthStates
-);
+  const calendar = renderCalendar(
+    guiState.calendar,
+    activeProjectState()?.monthStates
+  );
+  tableObserver(calendar);
 
-if (app) {
   try {
     const stats = createStats(guiState.stats);
     const editRates = createRateDetails(
       guiState.rate,
-      activeProjectState?.rateStates
+      activeProjectState()?.rateStates
     );
 
     rateObserver(editRates);
-
-    app.appendChild(calendar);
+    const loginRow = login();
+    appContainer.appendChild(loginRow);
+    appContainer.appendChild(calendar);
     const projectRow = createProjectRow(
       guiState.projectRow,
       guiState.filterRow,
@@ -64,34 +82,50 @@ if (app) {
       guiState.calendarAttributes,
       state.projects
     );
-    app.appendChild(projectRow);
-    app.appendChild(stats);
-    app.appendChild(editRates);
+    appContainer.appendChild(projectRow);
+    appContainer.appendChild(stats);
+    appContainer.appendChild(editRates);
 
     setRateAttributes(state.projects);
     setHours(state.projects);
 
-    const appObserver = new MutationObserver(() => {
-      const currentState = returnCalendarState();
-      console.log("storing in storage");
-      localStorage.setItem(localStorageKey, JSON.stringify(currentState));
+    const appObserver = new MutationObserver((records: MutationRecord[]) => {
+      let updateState = false;
+      for (const record of records) {
+        if (record.type === RecordType.AttributeChange) {
+          if (isTotalChange(record.attributeName)) {
+            // We dont store this field in state
+            continue;
+          } else {
+            updateState = true;
+            break;
+          }
+        }
+      }
+      if (updateState) {
+        const currentState = returnCalendarState();
+        const body = {
+          user: "fjogen",
+          state: currentState,
+        };
+        fetch("/api/post", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+      }
     });
-    appObserver.observe(app, {
+    appObserver.observe(appContainer, {
       attributes: true,
-      childList: true,
+      childList: false,
       subtree: true,
       attributeOldValue: true,
     });
     recalculateIncome();
-    const button = createElement("button");
-    button.textContent = "Clear storage";
-    button.addEventListener("click", () => {
-      localStorage.removeItem(localStorageKey);
-    });
-    app.appendChild(button);
   } catch (error) {
     console.log("error", error);
   }
-}
+};
 
-tableObserver(calendar);
+if (appContainer) {
+  renderApp(appContainer);
+}

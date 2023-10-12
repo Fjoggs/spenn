@@ -123,7 +123,7 @@ details div label {
 
 @media (max-width: 640px) {
     input {
-        max-width: 40px;
+        max-width: 50px;
     }
 }
 
@@ -260,4 +260,32 @@ th {
 
 #edit-rates-container input {
     max-width: 75px;
+}
+
+#login-row {
+    display: flex;
+    align-items: center;
+    align-self: end;
+    gap: 5px;
+    margin-top: 5px;
+    margin-bottom: 20px;
+    min-height: 30px;
+}
+
+#login-row, button {
+    min-height: 30px;
+}
+
+#username, #password {
+    min-width: 100px;
+}
+
+#logged-in {
+    font-style: italic;
+    min-width: 50px;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
 }
