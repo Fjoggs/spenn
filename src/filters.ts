@@ -40,7 +40,7 @@ export const createFilterRow = ({ filterRowId, filters }: FilterRow) => {
         activateFilter(
           button.dataAttribute,
           button.readOnly,
-          button.filterMode
+          button.filterMode,
         );
         setOtherFiltersInactive(filterRow);
         button.button.className = activeClassName;
@@ -52,7 +52,7 @@ export const createFilterRow = ({ filterRowId, filters }: FilterRow) => {
 
 const createFilterButton = (
   { id, label, dataAttribute, readOnly, filterMode, isActive }: Filter,
-  filterRow: HTMLElement
+  filterRow: HTMLElement,
 ) => {
   const button = createElement("button", id);
   button.textContent = label;
@@ -77,7 +77,7 @@ const setOtherFiltersInactive = (buttonRow: HTMLElement) => {
 const activateFilter = (
   dataAttribute: string,
   readOnly: boolean,
-  filterMode: string
+  filterMode: string,
 ) => {
   const table = document.getElementById("table");
   table?.setAttribute("data-active-filter", filterMode);
@@ -91,7 +91,7 @@ const activateFilter = (
           if (day.firstChild) {
             const input = day.firstChild as HTMLInputElement;
             const value = input.getAttribute(
-              dataAttribute.replace("PROJECT_NAME", getActiveProjectName())
+              dataAttribute.replace("PROJECT_NAME", getActiveProjectName()),
             );
             input.readOnly = readOnly;
             if (value) {

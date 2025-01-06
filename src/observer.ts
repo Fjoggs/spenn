@@ -1,5 +1,7 @@
 import { calculateDayIncome } from "./calculations";
 import { getActiveProjectName } from "./project";
+import { renderApp } from "./render";
+import { returnCalendarState } from "./state";
 
 export const RecordType = {
   AttributeChange: "attributes",
@@ -13,14 +15,88 @@ const oberserverConfig: MutationObserverInit = {
   attributeOldValue: true,
 };
 
+export const appObserver = (appContainer: HTMLDivElement) => {
+  const observer = new MutationObserver(checkForUpdates);
+  observer.observe(appContainer, {
+    attributes: true,
+    childList: false,
+    subtree: true,
+    attributeOldValue: true,
+  });
+  return observer;
+};
+
 export const tableObserver = (table: HTMLTableElement) => {
   const observer = new MutationObserver(onChangeTableObserver);
   observer.observe(table, oberserverConfig);
+  return observer;
 };
 
 export const rateObserver = (rateContainer: HTMLElement) => {
   const observer = new MutationObserver(onChangeRatesObserver);
   observer.observe(rateContainer, oberserverConfig);
+  return observer;
+};
+
+const isTotalChange = (attributeName: string | null) => {
+  if (attributeName === `data-project-${getActiveProjectName()}-total-income`) {
+    return true;
+  } else if (
+    attributeName === `data-project-${getActiveProjectName()}-total-hours`
+  ) {
+    return true;
+  }
+  return false;
+};
+
+const checkForUpdates = (records: MutationRecord[]) => {
+  {
+    let updateState = false;
+    for (const record of records) {
+      if (record.type === RecordType.AttributeChange) {
+        if (isTotalChange(record.attributeName)) {
+          // We dont store this field in state
+          continue;
+        } else if (
+          record.attributeName === "data-year" ||
+          record.attributeName === "data-month"
+        ) {
+          const calendar = document.getElementById("table");
+          console.log("record", record);
+
+          const today = new Date();
+          const year =
+            calendar?.getAttribute("data-year") || today.getFullYear();
+          const month =
+            calendar?.getAttribute("data-month") || today.getMonth();
+
+          const header = document.getElementById("header") as HTMLDivElement;
+          const appContainer = document.getElementById("app") as HTMLDivElement;
+          const date = new Date(Number(year), Number(month));
+          header.replaceChildren();
+          appContainer.replaceChildren();
+
+          renderApp(date, header, appContainer, false);
+          break; // No need to handle the month change event
+        } else {
+          updateState = true;
+          break;
+        }
+      }
+    }
+
+    if (updateState) {
+      const currentState = returnCalendarState();
+      const body = {
+        user: "fjogen",
+        state: currentState,
+      };
+      fetch("/api/post", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    }
+  }
 };
 
 const onChangeTableObserver = (records: MutationRecord[]) => {
@@ -66,16 +142,16 @@ const onChangeRatesObserver = (records: MutationRecord[]) => {
 
 const handleTableAttributeChange = (
   table: HTMLTableElement,
-  record: MutationRecord
+  record: MutationRecord,
 ) => {
   const activeProject = getActiveProjectName();
 
   const input = record.target as HTMLInputElement;
   const totalProjectHours = Number(
-    table.getAttribute(`data-project-${activeProject}-total-hours`)
+    table.getAttribute(`data-project-${activeProject}-total-hours`),
   );
   const totalProjectIncome = Number(
-    table.getAttribute(`data-project-${activeProject}-total-income`)
+    table.getAttribute(`data-project-${activeProject}-total-income`),
   );
   const oldValue = Number(record.oldValue);
   setProjectHours(table, input, totalProjectHours, oldValue);
@@ -89,7 +165,7 @@ const setProjectHours = (
   table: HTMLTableElement,
   inputElement: HTMLInputElement,
   totalProjectHours: number,
-  oldValue: number
+  oldValue: number,
 ) => {
   const hours = Number(inputElement.value);
   const projectHours = document.getElementById("hours-project");
@@ -99,7 +175,7 @@ const setProjectHours = (
     projectHours.textContent = newProjectHours;
     table.setAttribute(
       `data-project-${getActiveProjectName()}-total-hours`,
-      newProjectHours
+      newProjectHours,
     );
   }
 };
@@ -107,7 +183,7 @@ const setProjectHours = (
 const setProjectIncome = (
   income: number,
   totalProjectIncome: number,
-  table: HTMLTableElement
+  table: HTMLTableElement,
 ) => {
   const incomeProject = document.getElementById("income-project");
   if (incomeProject) {
@@ -115,7 +191,7 @@ const setProjectIncome = (
     incomeProject.textContent = formatAsCurrency(total);
     table.setAttribute(
       `data-project-${getActiveProjectName()}-total-income`,
-      total.toString()
+      total.toString(),
     );
   }
 };
@@ -184,7 +260,7 @@ export const recalculateIncome = () => {
             let sum = 0;
             if (filterMode === "income") {
               const hours = input.getAttribute(
-                `data-project-${activeProject}-hours`
+                `data-project-${activeProject}-hours`,
               );
               sum = calculateDayIncome(input, 0, Number(hours));
             } else {
@@ -193,7 +269,7 @@ export const recalculateIncome = () => {
             if (sum > 0) {
               input.setAttribute(
                 `data-project-${activeProject}-income`,
-                Math.floor(sum).toString()
+                Math.floor(sum).toString(),
               );
               if (filterMode === "income") {
                 input.value = Math.floor(sum).toString();
@@ -202,7 +278,7 @@ export const recalculateIncome = () => {
               input.removeAttribute(`data-project-${activeProject}-income`);
             }
             const totalProjectIncome = Number(
-              table.getAttribute(`data-project-${activeProject}-total-income`)
+              table.getAttribute(`data-project-${activeProject}-total-income`),
             );
             setProjectIncome(sum, totalProjectIncome, table);
           }

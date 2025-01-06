@@ -1,9 +1,10 @@
-import { MonthState } from "./calendar";
+import { MonthState } from "./state";
 import { FilterRow, createFilterRow } from "./filters";
 import { formatAsCurrency } from "./observer";
 import { Rate } from "./rate";
-import { CalendarAttributes, ProjectState } from "./state";
+import { ProjectState } from "./state";
 import { createElement } from "./util";
+import { CalendarAttributes } from "./guiState";
 
 export interface ProjectRow {
   inputId: string;
@@ -15,7 +16,7 @@ export const createProjectRow = (
   filterRow: FilterRow,
   rates: Rate[],
   calendarAttributes: CalendarAttributes,
-  projects?: ProjectState[]
+  projects?: ProjectState[],
 ) => {
   let projectRow = createElement("div", "project-row");
   projectRow.className = "project-row";
@@ -31,7 +32,7 @@ export const createProjectRow = (
       project.name,
       projectRow,
       rates,
-      calendarAttributes
+      calendarAttributes,
     );
     if (index === 0) {
       const table = document.getElementById("table");
@@ -47,7 +48,7 @@ export const createProjectRow = (
     projectRow,
     filterRowElement,
     rates,
-    calendarAttributes
+    calendarAttributes,
   );
   projectRow.appendChild(filterRowElement);
   return projectRow;
@@ -59,11 +60,11 @@ const createAddNewProjectInput = (
   projectRow: HTMLElement,
   filterRow: HTMLElement,
   rates: Rate[],
-  calendarAttributes: CalendarAttributes
+  calendarAttributes: CalendarAttributes,
 ) => {
   const addNewProjectInput = createElement(
     "input",
-    inputId
+    inputId,
   ) as HTMLInputElement;
   addNewProjectInput.setAttribute("placeholder", inputPlaceholder);
   addNewProjectInput.addEventListener("change", (event) => {
@@ -74,7 +75,7 @@ const createAddNewProjectInput = (
         projectName,
         projectRow,
         rates,
-        calendarAttributes
+        calendarAttributes,
       );
       addNewProjectInput.value = "";
       projectRow.removeChild(filterRow);
@@ -92,7 +93,7 @@ const createNewProject = (
   name: string,
   projectRow: HTMLElement,
   rates: Rate[],
-  calendarAttributes: CalendarAttributes
+  calendarAttributes: CalendarAttributes,
 ) => {
   const id = removeWhiteSpaceAndComma(name);
   const button = createElement("button", `project-${id}`);
@@ -106,7 +107,7 @@ const createNewProject = (
       projectsArray?.push(id);
       table?.setAttribute(
         "data-projects",
-        projectsArray?.join(",") || "Default,"
+        projectsArray?.join(",") || "Default,",
       );
     } else {
       table?.setAttribute("data-projects", id);
@@ -115,7 +116,7 @@ const createNewProject = (
       table?.setAttribute(dataAttribute.replace("PROJECT_NAME", id), "0");
     });
     button.addEventListener("click", () =>
-      onClickProjectButton(table, id, button, projectRow, name, rates)
+      onClickProjectButton(table, id, button, projectRow, name, rates),
     );
     return button;
   }
@@ -145,7 +146,7 @@ const onClickProjectButton = (
   button: HTMLElement,
   projectRow: HTMLElement,
   name: string,
-  rates: Rate[]
+  rates: Rate[],
 ) => {
   table?.setAttribute("data-active-project", id);
   button.classList.add("project-button-active");
@@ -161,7 +162,7 @@ const onClickProjectButton = (
   rates.forEach((rate) => {
     setRates(
       rate.id,
-      rate.dataAttribute.replace("PROJECT_NAME", getActiveProjectName())
+      rate.dataAttribute.replace("PROJECT_NAME", getActiveProjectName()),
     );
   });
   setProjectValues();
@@ -189,10 +190,10 @@ export const setProjectValues = () => {
   const table = document.getElementById("table");
   if (table) {
     const totalProjectHours = Number(
-      table.getAttribute(`data-project-${activeProject}-total-hours`)
+      table.getAttribute(`data-project-${activeProject}-total-hours`),
     );
     const totalProjectIncome = Number(
-      table.getAttribute(`data-project-${activeProject}-total-income`)
+      table.getAttribute(`data-project-${activeProject}-total-income`),
     );
     const projectHours = document.getElementById("hours-project");
     const projectIncome = document.getElementById("income-project");
@@ -211,7 +212,7 @@ export const setProjectValues = () => {
             if (day.firstChild) {
               const input = day.firstChild as HTMLInputElement;
               const value = input.getAttribute(
-                `data-project-${getActiveProjectName()}-${activeFilter}`
+                `data-project-${getActiveProjectName()}-${activeFilter}`,
               );
               if (value) {
                 input.value = value.toString();
@@ -231,9 +232,15 @@ export const setHours = (projects?: ProjectState[]) => {
   let total = 0;
   if (projects) {
     projects.forEach((project) => {
-      if (project.monthStates) {
-        project.monthStates.forEach((monthState) => {
-          total += setHoursForProject(monthState, project.name);
+      if (project.yearStates) {
+        project.yearStates.forEach((yearState) => {
+          const today = new Date();
+          const currentYear = today.getFullYear();
+          if (yearState.year === currentYear && yearState.monthStates) {
+            yearState.monthStates.forEach((monthState) => {
+              total += setHoursForProject(monthState, project.name);
+            });
+          }
         });
       }
     });
@@ -247,18 +254,18 @@ export const setHours = (projects?: ProjectState[]) => {
 
 const setHoursForProject = (monthState: MonthState, projectName: string) => {
   let total = 0;
-  monthState.values.forEach((value, index) => {
+  monthState.hours.forEach((hour, index) => {
     const input = document.getElementById(`date-input-${index + 1}`);
     if (input) {
-      input.setAttribute(`data-project-${projectName}-hours`, value);
-      total += Number(value);
+      input.setAttribute(`data-project-${projectName}-hours`, hour);
+      total += Number(hour);
     }
   });
   const table = document.getElementById("table");
   if (table) {
     table.setAttribute(
       `data-project-${projectName}-total-hours`,
-      total.toString()
+      total.toString(),
     );
     if (projectName === getActiveProjectName()) {
       const projectHours = document.getElementById("hours-project");

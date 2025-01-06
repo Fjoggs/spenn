@@ -1,6 +1,6 @@
 import { createElement } from "./util";
 
-export const login = () => {
+export const createLoginRow = () => {
   const username = createElement("input", "username") as HTMLInputElement;
   username.setAttribute("placeholder", "Username");
   username.required = true;
@@ -17,23 +17,27 @@ export const login = () => {
   login.addEventListener("click", async (event) => {
     event.preventDefault();
     console.log("login baby");
-    const body = {
-      username: username.value,
-      password: password.value,
-    };
-    const response = await fetch("/api/login", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-    if (response.status === 200) {
-      username.className = "hidden";
-      password.className = "hidden";
-      login.className = "hidden";
-      loggedIn.textContent = username.value;
-      logout.className = "";
-      loggedIn.className = "";
+    if (username.value && password.value) {
+      const body = {
+        username: username.value,
+        password: password.value,
+      };
+      const response = await fetch("/api/login", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      if (response.status === 200) {
+        username.className = "hidden";
+        password.className = "hidden";
+        login.className = "hidden";
+        loggedIn.textContent = username.value;
+        logout.className = "";
+        loggedIn.className = "";
+      } else {
+        console.log("oi!");
+      }
     } else {
-      console.log("oi!");
+      console.log("Oi dumbass");
     }
   });
 

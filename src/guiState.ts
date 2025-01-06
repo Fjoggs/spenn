@@ -1,7 +1,7 @@
-import { MonthState } from "./calendar";
 import { FilterRow } from "./filters";
 import { ProjectRow } from "./project";
 import { RateDetails, RateState } from "./rate";
+import { MonthState } from "./state";
 import { Stats } from "./stats";
 
 export interface GuiState {
@@ -32,6 +32,7 @@ const calendar: Calendar = {
   locale: "en-GB",
   dateFormat: {
     month: "long",
+    year: "numeric",
   },
 };
 
@@ -78,7 +79,7 @@ const rate: RateDetails = {
   rateInputs: [
     {
       id: "edit-rates-input-weekday",
-      label: "Weekday",
+      label: "Lol",
       labelId: "edit-rates-label-weekday",
       defaultRate: "1309",
       dataAttribute: "data-project-PROJECT_NAME-rate-weekday",
@@ -182,14 +183,7 @@ export const returnGuiState = () => ({
 });
 
 const getCalendar = (): Calendar => {
-  const locale = "en-GB";
-  const dateFormat: Intl.DateTimeFormatOptions = {
-    month: "long",
-  };
-  return {
-    locale,
-    dateFormat,
-  };
+  return calendar;
 };
 
 const getCalendarAttributes = (): CalendarAttributes => ({

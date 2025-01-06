@@ -1,5 +1,5 @@
 import Bun from "bun";
-import { getState, initDb, insertState } from "./src/db";
+import { getState, getUser, initDb, insertState } from "./src/db";
 
 const bundle = async () => {
   await Bun.build({
@@ -42,10 +42,15 @@ const server = Bun.serve({
         return new Response("", { status: 405 });
       }
       const json = await req.json();
-      return Response.json({
-        username: json.username,
-        password: json.password,
-      });
+      const user = getUser(db, json.username);
+      if (user) {
+        return Response.json({
+          username: json.username,
+          password: json.password,
+        });
+      } else {
+        return new Response("", { status: 401 });
+      }
     } else if (url.pathname === "/api/logout") {
       if (req.method !== "POST") {
         return new Response("", { status: 405 });

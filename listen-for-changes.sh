@@ -1,1 +1,3 @@
-while inotifywait -e modify ./*; do bun bundle; done
+while true;
+  do inotifywait --exclude spenn.sqlite-wal -e modify ./* && bun bundle;
+done

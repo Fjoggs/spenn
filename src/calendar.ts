@@ -1,6 +1,7 @@
 import { calculateDayIncome } from "./calculations";
+import { Calendar } from "./guiState";
 import { getActiveProjectName } from "./project";
-import { Calendar } from "./state";
+import { MonthState, YearState } from "./state";
 import { createElement } from "./util";
 
 export type DayType = "weekday" | "saturday" | "sunday" | "inactive";
@@ -12,26 +13,14 @@ export enum DayTypeEnum {
   Inactive = "inactive",
 }
 
-const currentDate = new Date();
+export const renderCalendar = (date: Date, yearStates?: YearState[]) => {
+  console.log("date", date);
 
-export type MonthState = {
-  month: number;
-  values: string[];
-};
-
-export const renderCalendar = (
-  calendar: Calendar,
-  monthStates?: MonthState[]
-) => {
-  console.log("monthStates", monthStates);
   const table = createElement("table", "table") as HTMLTableElement;
   table.setAttribute("data-projects", "");
-  const caption = createElement("caption");
-  caption.textContent = currentDate.toLocaleString(
-    calendar.locale,
-    calendar.dateFormat
-  );
-  table.appendChild(caption);
+  table.setAttribute("data-year", date.getFullYear().toString());
+  table.setAttribute("data-month", date.getMonth().toString());
+
   const thead = createElement("thead");
   const days = [
     "Monday",
@@ -47,28 +36,96 @@ export const renderCalendar = (
     element.textContent = day;
     thead.appendChild(element);
   });
-  const tbodyMonths = renderMonth(monthStates);
+  const tbodyMonths = renderMonth(date, yearStates);
   table.appendChild(thead);
   table.appendChild(tbodyMonths);
   return table;
 };
 
-const renderMonth = (monthStates?: MonthState[]) => {
-  const currentMonth = new Date().getMonth();
-  const monthState = monthStates?.find(
-    (monthState) => currentMonth === monthState.month
+export const renderHeader = (date: Date, calendar: Calendar) => {
+  const container = createElement("div");
+  container.className = "caption-container";
+  const previousMonth = createElement(
+    "button",
+    "previousMonth",
+  ) as HTMLButtonElement;
+  previousMonth.textContent = "<<";
+  previousMonth.addEventListener("click", (event) => onClick(event, date));
+  const nextMonth = createElement("button", "nextMonth") as HTMLButtonElement;
+  nextMonth.textContent = ">>";
+  nextMonth.addEventListener("click", (event) => onClick(event, date));
+  const caption = createElement("h2");
+  caption.textContent = date.toLocaleString(
+    calendar.locale,
+    calendar.dateFormat,
   );
-  const numOfDays = dateMapper[currentMonth] || 0;
+  container.appendChild(previousMonth);
+  container.appendChild(caption);
+  container.appendChild(nextMonth);
+  return container;
+};
+
+const onClick = (event: MouseEvent, date: Date) => {
+  const target = event.target as HTMLElement;
+
+  const calendar = document.getElementById("table");
+
+  let activeMonth = date.getMonth();
+  let activeYear = date.getFullYear();
+  if (target.id === "previousMonth") {
+    if (activeMonth === 0) {
+      activeYear--;
+      activeMonth = 11;
+    } else {
+      activeMonth--;
+    }
+    console.log("going backwards to", activeMonth, activeYear);
+  } else {
+    if (activeMonth === 11) {
+      activeYear++;
+      activeMonth = 0;
+    } else {
+      activeMonth++;
+    }
+    console.log("going forwards to ", activeMonth, activeYear);
+  }
+  if (calendar) {
+    calendar.setAttribute("data-year", activeYear.toString());
+    calendar.setAttribute("data-month", activeMonth.toString());
+  }
+};
+
+const renderMonth = (date: Date, yearStates?: YearState[]) => {
+  const currentMonth = date.getMonth();
+  const currentYear = date.getFullYear();
+
+  const monthStates = yearStates?.find(
+    (yearState) => currentYear === yearState.year,
+  )?.monthStates;
+
+  const monthState = monthStates?.find(
+    (monthState) => currentMonth === monthState.month,
+  );
+
+  const numOfDays = dateMapper(date) || 0;
 
   let numOfWeeks = Math.ceil(numOfDays / 7);
-  const startDayOfMonth = getStartDay();
+  console.log("nun", numOfWeeks);
+
+  const startDayOfMonth = getStartDay(date);
   if (startDayOfMonth > 4 && numOfDays === 31) {
     // 31 days month starting sat or sun needs an extra week
     numOfWeeks = 6;
+  } else if (startDayOfMonth > 5 && numOfDays === 30) {
+    // 30+ days month staring sunday needs an extra week
+    numOfWeeks = 6;
+  } else if (startDayOfMonth > 0 && date.getMonth() === 1) {
+    // February special case
+    numOfWeeks = 5;
   }
 
-  const lastDayOfMonth = getLastDay();
-  let date = 1;
+  const lastDayOfMonth = getLastDay(date);
+  let currentDate = 1;
   const tbody = createElement("tbody", "tbody");
   for (let week = 0; week < numOfWeeks; week++) {
     let row = createElement("tr");
@@ -77,13 +134,19 @@ const renderMonth = (monthStates?: MonthState[]) => {
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         if (dayOfWeek < startDayOfMonth) {
           row.appendChild(
-            renderDay(0, dayOfWeek, currentMonth, "inactive", monthState)
+            renderDay(0, dayOfWeek, currentMonth, "inactive", monthState),
           );
         } else {
           row.appendChild(
-            renderDay(date, dayOfWeek, currentMonth, "active", monthState)
+            renderDay(
+              currentDate,
+              dayOfWeek,
+              currentMonth,
+              "active",
+              monthState,
+            ),
           );
-          date++;
+          currentDate++;
         }
       }
     } else if (week === numOfWeeks - 1) {
@@ -91,12 +154,18 @@ const renderMonth = (monthStates?: MonthState[]) => {
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         if (dayOfWeek <= lastDayOfMonth) {
           row.appendChild(
-            renderDay(date, dayOfWeek, currentMonth, "active", monthState)
+            renderDay(
+              currentDate,
+              dayOfWeek,
+              currentMonth,
+              "active",
+              monthState,
+            ),
           );
-          date++;
+          currentDate++;
         } else {
           row.appendChild(
-            renderDay(0, dayOfWeek, currentMonth, "inactive", monthState)
+            renderDay(0, dayOfWeek, currentMonth, "inactive", monthState),
           );
         }
       }
@@ -104,9 +173,9 @@ const renderMonth = (monthStates?: MonthState[]) => {
       let dayOfWeek = 0;
       while (dayOfWeek < 7) {
         row.appendChild(
-          renderDay(date, dayOfWeek, currentMonth, "active", monthState)
+          renderDay(currentDate, dayOfWeek, currentMonth, "active", monthState),
         );
-        date++;
+        currentDate++;
         dayOfWeek++;
       }
     }
@@ -115,64 +184,65 @@ const renderMonth = (monthStates?: MonthState[]) => {
   return tbody;
 };
 
-const getStartDay = () => {
-  const today = new Date();
+const getStartDay = (date: Date) => {
   const firstDayOfMonth = new Date(
-    today.getFullYear(),
-    today.getMonth()
+    date.getFullYear(),
+    date.getMonth(),
   ).getUTCDay();
   return firstDayOfMonth;
 };
 
-const getLastDay = () => {
-  const today = new Date();
-  const month = today.getMonth();
-  const numOfDays = dateMapper[month];
-  const lastDayOfMonth = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    numOfDays
-  );
+const getLastDay = (date: Date) => {
+  const month = date.getMonth();
+  const numOfDays = dateMapper(date);
+  const lastDayOfMonth = new Date(date.getFullYear(), month, numOfDays);
   return lastDayOfMonth.getUTCDay();
 };
 
-const numOfDaysInFebruary = () => {
-  const year = new Date().getFullYear();
+const numOfDaysInFebruary = (date: Date) => {
+  const year = date.getFullYear();
   if (year % 4 === 0) {
     if (year % 100 === 0 && year % 400 === 0) {
       return 29;
     } else {
       return 28;
     }
+  } else {
+    return 28;
   }
 };
 
-const dateMapper = [
-  31,
-  numOfDaysInFebruary(),
-  31,
-  30,
-  31,
-  30,
-  31,
-  31,
-  30,
-  31,
-  30,
-  31,
-];
+const dateMapper = (date: Date) => {
+  const currentMonth = date.getMonth();
+  const mapping = [
+    31,
+    numOfDaysInFebruary(date),
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+
+  return mapping[currentMonth];
+};
 
 const renderDay = (
   date: number,
   dayOfWeek: number,
   currentMonth: number,
   type: "active" | "inactive" = "active",
-  monthState?: MonthState
+  monthState?: MonthState,
 ) => {
   const td = createElement("td");
   const input = createElement(
     "input",
-    `date-input-${date}`
+    `date-input-${date}`,
   ) as HTMLInputElement;
   input.setAttribute("type", "text");
   input.setAttribute("placeholder", date.toString());
@@ -202,11 +272,11 @@ const renderDay = (
     input.setAttribute("data-day-type", DayTypeEnum.Inactive);
     input.disabled = true;
   } else {
-    if (currentMonth === monthState?.month && monthState?.values[date - 1]) {
-      input.value = monthState.values[date - 1];
+    if (currentMonth === monthState?.month && monthState?.hours[date - 1]) {
+      input.value = monthState.hours[date - 1];
       input.setAttribute(
         `data-project-${getActiveProjectName()}-hours`,
-        monthState.values[date - 1]
+        monthState.hours[date - 1],
       );
     }
     if (isWeekend) {
@@ -230,7 +300,7 @@ const renderDay = (
 const setHoursAndIncome = (
   input: HTMLInputElement,
   event: Event,
-  hours?: string
+  hours?: string,
 ) => {
   const target = event.target as HTMLInputElement;
   const value = hours ? hours : target.value;
@@ -239,6 +309,6 @@ const setHoursAndIncome = (
   input.setAttribute(`data-project-${activeProject}-hours`, value);
   input.setAttribute(
     `data-project-${activeProject}-income`,
-    Math.floor(calculateDayIncome(input)).toString()
+    Math.floor(calculateDayIncome(input)).toString(),
   );
 };

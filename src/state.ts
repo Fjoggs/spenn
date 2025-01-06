@@ -1,11 +1,10 @@
-import { MonthState } from "./calendar";
 import { GuiState, returnGuiState } from "./guiState";
 import { getProjectsArray } from "./project";
 import { RateState } from "./rate";
 
 export interface AppState {
-  guiState?: GuiState;
-  state?: State;
+  guiState: GuiState;
+  state: State;
 }
 export interface State {
   projects?: ProjectState[];
@@ -13,9 +12,19 @@ export interface State {
 
 export interface ProjectState {
   name: string;
-  monthStates?: MonthState[];
   rateStates?: RateState[];
+  yearStates?: YearState[];
 }
+
+export interface YearState {
+  year: number;
+  monthStates?: MonthState[];
+}
+
+export type MonthState = {
+  month: number;
+  hours: string[];
+};
 
 const rateStates: RateState[] = [
   {
@@ -52,7 +61,7 @@ const getProjects = (): ProjectState[] => {
   projectsArray.forEach((projectName) => {
     const project: ProjectState = {
       name: projectName,
-      monthStates: getMonthState(projectName),
+      yearStates: getActiveYearState(projectName),
       rateStates: getRates(projectName),
     };
     projects.push(project);
@@ -80,13 +89,51 @@ const getRates = (projectName: string): RateState[] | [] => {
   return rateState;
 };
 
-const getMonthState = (projectName: string): MonthState[] => {
-  const values: string[] = [];
-  const monthState: MonthState = {
-    month: new Date().getMonth(),
-    values,
-  };
+const getActiveYearState = (projectName: string): YearState[] => {
+  const calendar = document.getElementById("table");
+  let activeYear = new Date().getFullYear().toString();
+  if (calendar) {
+    activeYear = calendar.getAttribute("data-year") || activeYear;
+  }
+  const monthStates: MonthState[] = getCurrentMonthState(projectName);
+  // const monthStates: MonthState[] = [];
+  const activeMonthState = getActiveMonthState(projectName);
+  monthStates.push(activeMonthState);
+  return [
+    {
+      year: Number(activeYear),
+      monthStates,
+    },
+  ];
+};
 
+const getCurrentMonthState = (projectName: string) => {
+  const calendar = document.getElementById("table");
+  let activeMonth = new Date().getMonth().toString();
+  let activeYear = new Date().getFullYear().toString();
+  if (calendar) {
+    activeMonth = calendar.getAttribute("data-month") || activeMonth;
+    activeYear = calendar.getAttribute("data-year") || activeYear;
+  }
+
+  // const activeProject = currentAppState.state.projects?.find(
+  //   (project) => projectName === project.name,
+  // );
+  // const monthStates = activeProject?.yearStates?.find(
+  //   (yearState) => yearState.year === Number(activeYear),
+  // );
+  return [];
+};
+
+const getActiveMonthState = (projectName: string): MonthState => {
+  const calendar = document.getElementById("table");
+  let activeMonth = new Date().getMonth().toString();
+  if (calendar) {
+    activeMonth = calendar.getAttribute("data-month") || activeMonth;
+  }
+  console.log("activeMonth", activeMonth);
+
+  const values: string[] = [];
   const days = document.querySelectorAll("input.calendar-day");
   if (days) {
     days.forEach((day) => {
@@ -94,5 +141,11 @@ const getMonthState = (projectName: string): MonthState[] => {
       values.push(value || "");
     });
   }
-  return [monthState];
+
+  const monthState: MonthState = {
+    month: Number(activeMonth),
+    hours: values,
+  };
+
+  return monthState;
 };

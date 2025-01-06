@@ -42,7 +42,24 @@ export const getState = (db: Database, user: string) => {
   const query = db.query("select state from spenn where user = $user;");
   const result = query.get({
     $user: user,
-  }) as SpennRow;
+  }) as SpennRow | null;
+  if (result?.state) {
+    return JSON.parse(result.state);
+  } else {
+    return {};
+  }
+};
 
-  return JSON.parse(result.state);
+export const getUser = (db: Database, user: string) => {
+  console.log("user", user);
+  const query = db.query("select user from spenn where user = $user;");
+  const result = query.get({
+    $user: user,
+  }) as SpennRow | null;
+  console.log("result", result);
+  if (result?.user) {
+    return result.user;
+  } else {
+    return "";
+  }
 };

@@ -23,13 +23,13 @@ export type RateState = {
 
 export const createRateDetails = (
   rate: RateDetails,
-  rateStates?: RateState[]
+  rateStates?: RateState[],
 ) => {
   const editRatesDetails = createDetailsElement(rate.details);
   const container = createElement("div", rate.containerId);
   rate.rateInputs.forEach((rateInput) => {
     const value = rateStates?.find(
-      (rateState) => rateState.id === rateInput.id
+      (rateState) => rateState.id === rateInput.id,
     )?.value;
     container.appendChild(createRateInput(rateInput, value));
   });
@@ -39,15 +39,15 @@ export const createRateDetails = (
 
 const createRateInput = (
   { id, label, labelId, defaultRate, dataAttribute }: Rate,
-  value?: string
+  value?: string,
 ) => {
   const input = createElement("input", id) as HTMLInputElement;
   const dataAttributeActiveProject = dataAttribute.replace(
     "PROJECT_NAME",
-    getActiveProjectName()
+    getActiveProjectName(),
   );
   input.addEventListener("change", (event) =>
-    onChangeHandler(event, input, dataAttribute)
+    onChangeHandler(event, input, dataAttribute),
   );
   if (value) {
     input.value = value;
@@ -67,11 +67,11 @@ const onChangeHandler = (
   event: Event,
   input: HTMLInputElement,
   dataAttribute: string,
-  value?: string
+  value?: string,
 ) => {
   const dataAttributeActiveProject = dataAttribute.replace(
     "PROJECT_NAME",
-    getActiveProjectName()
+    getActiveProjectName(),
   );
   const target = event.target as HTMLInputElement;
   if (value) {
@@ -97,14 +97,14 @@ export const setRateAttributes = (projects?: ProjectState[]) => {
 const setRateAttributeValue = (
   rateState: RateState,
   project: ProjectState,
-  input: HTMLElement | null
+  input: HTMLElement | null,
 ) => {
   if (input) {
     const rateId = input.id.replace("edit-rates-input-", "");
     if (rateState.value) {
       input.setAttribute(
         `data-project-${project.name}-rate-${rateId}`,
-        rateState.value
+        rateState.value,
       );
     }
   }

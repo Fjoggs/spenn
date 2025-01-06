@@ -1,5 +1,10 @@
 describe("spenn application", () => {
   it("can edit hours, rates and calculate the correct amount of income", () => {
+    cy.intercept("GET", "/api/get*", {
+      body: {},
+    }).as("getState");
+    cy.intercept("POST", "/api/post", {}).as("postState");
+
     cy.visit("/");
 
     cy.get("#edit-rates-summary").click();
@@ -48,15 +53,15 @@ describe("spenn application", () => {
     cy.get("#stats-summary").click();
     cy.get("#hours-project").should("have.text", "8.5");
     cy.get("#hours-combined").should("have.text", "8.5");
-    cy.get("#income-project").contains("kr 2 956,04");
-    cy.get("#income-combined").contains("kr 2 956,04");
+    cy.get("#income-project").contains("2 956,04 kr");
+    cy.get("#income-combined").contains("2 956,04 kr");
 
     // Add new project and activate it
     cy.get("#add-project").type("Second project").type("{enter}");
     cy.get("#project-second-project").click();
     cy.get("#project-second-project").should(
       "have.class",
-      "project-button-active"
+      "project-button-active",
     );
 
     // Verify that inputs aren't passing over from previous project
@@ -79,8 +84,8 @@ describe("spenn application", () => {
     // Verify stats
     cy.get("#hours-project").should("have.text", "10.5");
     cy.get("#hours-combined").should("have.text", "19");
-    cy.get("#income-project").contains("kr 3 651,58");
-    cy.get("#income-combined").contains("kr 6 607,62");
+    cy.get("#income-project").contains("3 651,58 kr");
+    cy.get("#income-combined").contains("6 607,62 kr");
 
     // Verify that first project is still correct
     // Verify money
@@ -99,18 +104,18 @@ describe("spenn application", () => {
     // Verify stats
     cy.get("#hours-project").should("have.text", "8.5");
     cy.get("#hours-combined").should("have.text", "19");
-    cy.get("#income-project").contains("kr 2 956,04");
-    cy.get("#income-combined").contains("kr 6 607,62");
+    cy.get("#income-project").contains("2 956,04 kr");
+    cy.get("#income-combined").contains("6 607,62 kr");
 
     // Changing rates should re-calculate incomes
     cy.get("#toggle-view-income").click();
     cy.get("#edit-rates-summary").click();
     cy.clearAndSetValue("#edit-rates-input-weekday", "100");
     cy.get("#edit-rates-summary").click();
-    cy.get("#date-input-12").should("have.value", "26");
+    cy.get("#date-input-12").should("have.value", "347");
     cy.get("#date-input-10").should("have.value", "199");
-    cy.get("#income-project").contains("kr 225,82");
-    cy.get("#income-combined").contains("kr 3 877,4");
+    cy.get("#income-project").contains("547,03 kr");
+    cy.get("#income-combined").contains("4 198,60 kr");
 
     // Changing rates for one project should not modify other projects rates
     cy.get("#project-second-project").click();
